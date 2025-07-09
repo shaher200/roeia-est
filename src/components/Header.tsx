@@ -1,96 +1,59 @@
 
-import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Menu, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import TickerBar from './TickerBar';
+import { Link } from 'react-router-dom';
+import { ShoppingCart } from 'lucide-react';
+import { useCart } from '@/contexts/CartContext';
 
 const Header = () => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const location = useLocation();
-
-  const navigation = [
-    { name: 'الرئيسية', href: '/' },
-    { name: 'التصنيفات', href: '/categories' },
-    { name: 'نادي المعرفة', href: '/knowledge-club' },
-    { name: 'السحوبات والجوائز', href: '/draws-prizes' },
-    { name: 'من نحن', href: '/about' },
-  ];
-
-  const isActive = (href: string) => location.pathname === href;
+  const { getTotalItems } = useCart();
+  const totalItems = getTotalItems();
 
   return (
-    <header className="bg-white shadow-md sticky top-0 z-50">
-      {/* Logo Section */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-800 py-4">
-        <div className="container mx-auto px-4 text-center">
-          <h1 className="text-white text-2xl font-bold">
-            مؤسسة رؤية للطباعة والنشر
-          </h1>
-          <p className="text-blue-100 text-sm mt-1">
-            نحو مستقبل مشرق بالمعرفة والثقافة
-          </p>
-        </div>
-      </div>
-
-      {/* Ticker Bar */}
-      <TickerBar />
-
-      {/* Navigation */}
-      <nav className="border-b border-gray-200">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-16">
-            {/* Mobile menu button */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="md:hidden"
-            >
-              {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-            </Button>
-
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex space-x-reverse space-x-8">
-              {navigation.map((item) => (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${
-                    isActive(item.href)
-                      ? 'text-blue-600 bg-blue-50 border-b-2 border-blue-600'
-                      : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
-                  }`}
-                >
-                  {item.name}
-                </Link>
-              ))}
+    <header className="bg-white shadow-sm border-b">
+      <div className="container mx-auto px-4">
+        <div className="flex items-center justify-between h-16">
+          {/* Logo */}
+          <Link to="/" className="flex items-center">
+            <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center">
+              <span className="text-white font-bold text-lg">ر</span>
             </div>
+            <div className="mr-3 text-right">
+              <h1 className="text-lg font-bold text-gray-900">مؤسسة رؤية</h1>
+              <p className="text-xs text-gray-600">للطباعة والنشر</p>
+            </div>
+          </Link>
+
+          {/* Cart Icon */}
+          <Link to="/cart" className="relative">
+            <ShoppingCart className="h-6 w-6 text-gray-600 hover:text-blue-600 transition-colors" />
+            {totalItems > 0 && (
+              <span className="absolute -top-2 -right-2 bg-orange-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                {totalItems}
+              </span>
+            )}
+          </Link>
+        </div>
+
+        {/* Navigation */}
+        <nav className="border-t py-2 overflow-x-auto">
+          <div className="flex space-x-reverse space-x-6 min-w-max">
+            <Link to="/" className="text-gray-700 hover:text-blue-600 text-sm font-medium py-2">
+              الرئيسية
+            </Link>
+            <Link to="/categories" className="text-gray-700 hover:text-blue-600 text-sm font-medium py-2">
+              التصنيفات
+            </Link>
+            <Link to="/knowledge-club" className="text-gray-700 hover:text-blue-600 text-sm font-medium py-2">
+              نادي المعرفة
+            </Link>
+            <Link to="/draws-prizes" className="text-gray-700 hover:text-blue-600 text-sm font-medium py-2">
+              السحوبات والجوائز
+            </Link>
+            <Link to="/about" className="text-gray-700 hover:text-blue-600 text-sm font-medium py-2">
+              من نحن
+            </Link>
           </div>
-
-          {/* Mobile Navigation */}
-          {isMenuOpen && (
-            <div className="md:hidden">
-              <div className="px-2 pt-2 pb-3 space-y-1 bg-white border-t">
-                {navigation.map((item) => (
-                  <Link
-                    key={item.name}
-                    to={item.href}
-                    onClick={() => setIsMenuOpen(false)}
-                    className={`block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200 ${
-                      isActive(item.href)
-                        ? 'text-blue-600 bg-blue-50'
-                        : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
-                    }`}
-                  >
-                    {item.name}
-                  </Link>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      </nav>
+        </nav>
+      </div>
     </header>
   );
 };

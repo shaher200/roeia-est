@@ -3,7 +3,9 @@ import { useParams, Link } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Calendar, User, Tag } from 'lucide-react';
+import { useCart } from '@/contexts/CartContext';
+import { useToast } from '@/hooks/use-toast';
+import { ArrowRight, Calendar, User, Tag, ShoppingCart } from 'lucide-react';
 
 const mockBooks = [
   {
@@ -34,6 +36,8 @@ const mockBooks = [
 
 const BookDetails = () => {
   const { id } = useParams();
+  const { addToCart } = useCart();
+  const { toast } = useToast();
   const book = mockBooks.find(b => b.id === parseInt(id || '1'));
 
   if (!book) {
@@ -50,6 +54,14 @@ const BookDetails = () => {
       </Layout>
     );
   }
+
+  const handleAddToCart = () => {
+    addToCart(book);
+    toast({
+      title: "تم إضافة الكتاب للسلة",
+      description: `تم إضافة "${book.title}" إلى سلة المشتريات`,
+    });
+  };
 
   return (
     <Layout>
@@ -113,17 +125,23 @@ const BookDetails = () => {
             </div>
 
             <div className="border-t pt-4">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between mb-4">
                 <span className="text-3xl font-bold text-blue-600">
                   {book.price} جنيه
                 </span>
-                <div className="text-sm text-gray-500">
-                  للمراجعة والاطلاع فقط
-                </div>
               </div>
-              <p className="text-gray-600 text-sm mt-2">
-                * هذا الكتاب معروض للتصفح والمراجعة. للحصول على نسخة، يرجى التواصل معنا.
-              </p>
+              
+              <div className="flex gap-4">
+                <Button onClick={handleAddToCart} className="flex-1">
+                  <ShoppingCart className="h-4 w-4 mr-2" />
+                  أضف للسلة
+                </Button>
+                <Link to="/cart">
+                  <Button variant="outline">
+                    عرض السلة
+                  </Button>
+                </Link>
+              </div>
             </div>
 
             {/* Knowledge Club Benefits */}
