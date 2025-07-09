@@ -107,8 +107,22 @@ All colors MUST be HSL.
   }
 }
 
+/* RTL Ticker animation - right to left */
+@keyframes ticker-rtl {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
 .ticker-content {
   animation: ticker 30s linear infinite;
+}
+
+.ticker-content-rtl {
+  animation: ticker-rtl 30s linear infinite;
 }
 
 /* RTL specific utilities */

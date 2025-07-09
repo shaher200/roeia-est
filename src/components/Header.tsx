@@ -15,9 +15,11 @@ const Header = () => {
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <Link to="/" className="flex items-center">
-              <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center">
-                <span className="text-white font-bold text-lg">ر</span>
-              </div>
+              <img 
+                src="/lovable-uploads/13c0898b-4b2b-4271-b5d7-6bf53372ad7a.png" 
+                alt="مؤسسة رؤية للطباعة والنشر" 
+                className="w-12 h-12 object-contain"
+              />
               <div className="mr-3 text-right">
                 <h1 className="text-lg font-bold text-gray-900">مؤسسة رؤية</h1>
                 <p className="text-xs text-gray-600">للطباعة والنشر</p>

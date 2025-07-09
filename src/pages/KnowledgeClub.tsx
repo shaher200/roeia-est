@@ -248,19 +248,38 @@ const KnowledgeClub = () => {
                 </div>
 
                 <div>
-                  <Label>طريقة الدفع *</Label>
+                  <Label className="text-sm font-medium">طريقة الدفع *</Label>
                   <RadioGroup 
                     value={formData.paymentMethod} 
                     onValueChange={(value) => handleInputChange('paymentMethod', value)}
-                    className="mt-2"
+                    className="mt-3 space-y-4"
                   >
-                    <div className="flex items-center space-x-reverse space-x-2">
-                      <RadioGroupItem value="vodafone" id="vodafone" />
-                      <Label htmlFor="vodafone">فودافون كاش</Label>
+                    <div className="border rounded-lg p-4 hover:bg-gray-50">
+                      <div className="flex items-center space-x-reverse space-x-2 mb-2">
+                        <RadioGroupItem value="vodafone" id="vodafone" />
+                        <Label htmlFor="vodafone" className="font-medium">فودافون كاش</Label>
+                      </div>
+                      {formData.paymentMethod === 'vodafone' && (
+                        <div className="mr-6 text-sm text-gray-600 space-y-1">
+                          <p>• قم بتحويل المبلغ على محفظة رقم 01026217597</p>
+                          <p>• احتفظ بإيصال العملية</p>
+                          <p>• ارفق صورة الإيصال أدناه</p>
+                        </div>
+                      )}
                     </div>
-                    <div className="flex items-center space-x-reverse space-x-2">
-                      <RadioGroupItem value="instapay" id="instapay" />
-                      <Label htmlFor="instapay">انستاباي</Label>
+                    
+                    <div className="border rounded-lg p-4 hover:bg-gray-50">
+                      <div className="flex items-center space-x-reverse space-x-2 mb-2">
+                        <RadioGroupItem value="instapay" id="instapay" />
+                        <Label htmlFor="instapay" className="font-medium">انستاباي</Label>
+                      </div>
+                      {formData.paymentMethod === 'instapay' && (
+                        <div className="mr-6 text-sm text-gray-600 space-y-1">
+                          <p>• قم بالتحويل عبر انستاباي على رقم 01270439417</p>
+                          <p>• احتفظ بإيصال العملية</p>
+                          <p>• ارفق صورة الإيصال أدناه</p>
+                        </div>
+                      )}
                     </div>
                   </RadioGroup>
                 </div>
