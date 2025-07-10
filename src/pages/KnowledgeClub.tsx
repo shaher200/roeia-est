@@ -260,7 +260,7 @@ const KnowledgeClub = () => {
                         <Label htmlFor="vodafone" className="font-medium">فودافون كاش</Label>
                       </div>
                       {formData.paymentMethod === 'vodafone' && (
-                        <div className="mr-6 text-sm text-gray-600 space-y-1">
+                        <div className="mr-6 text-sm text-blue-500 space-y-1">
                           <p>• قم بتحويل المبلغ على محفظة رقم 01026217597</p>
                           <p>• احتفظ بإيصال العملية</p>
                           <p>• ارفق صورة الإيصال أدناه</p>
@@ -274,7 +274,7 @@ const KnowledgeClub = () => {
                         <Label htmlFor="instapay" className="font-medium">انستاباي</Label>
                       </div>
                       {formData.paymentMethod === 'instapay' && (
-                        <div className="mr-6 text-sm text-gray-600 space-y-1">
+                        <div className="mr-6 text-sm text-blue-500 space-y-1">
                           <p>• قم بالتحويل عبر انستاباي على رقم 01270439417</p>
                           <p>• احتفظ بإيصال العملية</p>
                           <p>• ارفق صورة الإيصال أدناه</p>
