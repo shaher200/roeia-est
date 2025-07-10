@@ -132,7 +132,7 @@ const CheckoutForm = ({ items, totalPrice, onOrderSubmit, onBack }: CheckoutForm
               <h4 className="font-semibold text-orange-800 mb-2">تعليمات الدفع:</h4>
               {formData.paymentMethod === 'vodafone-cash' && (
                 <div className="text-blue-500 text-sm">
-                  <p>• قم بتحويل المبلغ إلى محفظة : 01026217597</p>
+                  <p>• قم بتحويل المبلغ إلى محفظة رقم : 01026217597</p>
                   <p>• أرسل صورة من إيصال التحويل</p>
                 </div>
               )}
