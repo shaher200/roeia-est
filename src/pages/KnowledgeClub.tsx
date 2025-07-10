@@ -24,27 +24,27 @@ const KnowledgeClub = () => {
   const benefits = [
     {
       icon: Gift,
-      title: 'سحب شهري 5000 جنيه',
+      title: 'سحب شهري بقيمة 5000 جنيه',
       description: 'فرصة للفوز بجائزة نقدية كل شهر'
     },
     {
       icon: Star,
-      title: 'سحب على عمرة مجانية',
+      title: 'سحب على عمرة شاملة التكاليف',
       description: 'عمرة شاملة التكاليف'
     },
     {
       icon: Users,
-      title: 'خصم 20% على الكتب',
+      title: 'خصم 20% على شراء الكتب من التطبيق',
       description: 'خصم حصري لأعضاء النادي'
     },
     {
       icon: MessageSquare,
-      title: 'قناة تيليجرام خاصة',
+      title: 'قناة تيليجرام خاصة بأعضاء نادى المعرفة',
       description: 'محتوى حصري وتفاعل مباشر'
     },
     {
       icon: Video,
-      title: 'قناة يوتيوب حصرية',
+      title: 'قناة يوتيوب حصرية تفاعلية مع الاعضاء',
       description: 'فيديوهات تعليمية مميزة'
     },
     {
