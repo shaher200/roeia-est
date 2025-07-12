@@ -11,9 +11,10 @@ const TickerBar = () => {
 
   return (
     <div className="bg-orange-500 text-white py-2 overflow-hidden">
-      <div className="ticker-content-rtl whitespace-nowrap">
-        <span className="inline-block px-8">
-          {tickerMessages.map((message, index) => (
+      <div className="ticker-content-continuous whitespace-nowrap">
+        <span className="inline-block">
+          {/* تكرار الرسائل مرتين لضمان الحركة المستمرة */}
+          {[...tickerMessages, ...tickerMessages].map((message, index) => (
             <span key={index} className="mx-8 text-sm font-medium">
               ⭐ {message}
             </span>

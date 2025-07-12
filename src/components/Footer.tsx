@@ -5,13 +5,13 @@ const Footer = () => {
   const socialLinks = [
     {
       name: 'واتساب',
-      href: 'https://wa.me/1234567890',
+      href: 'https://wa.me/201270439417',
       icon: MessageCircle,
       color: 'bg-green-500 hover:bg-green-600'
     },
     {
       name: 'تيليجرام',
-      href: 'https://t.me/roiapublishing',
+      href: 'https://t.me/+201270439417',
       icon: Send,
       color: 'bg-blue-500 hover:bg-blue-600'
     },
