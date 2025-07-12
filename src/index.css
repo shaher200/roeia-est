@@ -107,13 +107,13 @@ All colors MUST be HSL.
   }
 }
 
-/* RTL Ticker animation - right to left - حركة مستمرة */
-@keyframes ticker-rtl-continuous {
+/* RTL Ticker animation - left to right - حركة من اليسار لليمين */
+@keyframes ticker-ltr-continuous {
   0% {
-    transform: translateX(100%);
+    transform: translateX(-100%);
   }
   100% {
-    transform: translateX(-100%);
+    transform: translateX(100%);
   }
 }
 
@@ -121,13 +121,9 @@ All colors MUST be HSL.
   animation: ticker 30s linear infinite;
 }
 
-.ticker-content-rtl {
-  animation: ticker-rtl-continuous 45s linear infinite;
-}
-
-/* حركة مستمرة جديدة للأخبار */
+/* حركة مستمرة جديدة للأخبار من اليسار لليمين */
 .ticker-content-continuous {
-  animation: ticker-rtl-continuous 60s linear infinite;
+  animation: ticker-ltr-continuous 60s linear infinite;
 }
 
 /* RTL specific utilities */
