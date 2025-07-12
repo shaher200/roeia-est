@@ -162,7 +162,7 @@ const AboutUs = () => {
                   <Phone className="h-6 w-6 text-blue-600" />
                 </div>
                 <h4 className="font-semibold mb-2">الهاتف</h4>
-                <p className="text-gray-600 ltr">+20 100 123 4567</p>
+                <p className="text-gray-600 ltr">01270439417</p>
               </div>
 
               <div className="flex flex-col items-center">
@@ -170,7 +170,7 @@ const AboutUs = () => {
                   <Mail className="h-6 w-6 text-orange-600" />
                 </div>
                 <h4 className="font-semibold mb-2">البريد الإلكتروني</h4>
-                <p className="text-gray-600 ltr">info@roiapublishing.com</p>
+                <p className="text-gray-600 ltr">roeia.est@outlook.com</p>
               </div>
 
               <div className="flex flex-col items-center">
@@ -178,7 +178,7 @@ const AboutUs = () => {
                   <MapPin className="h-6 w-6 text-green-600" />
                 </div>
                 <h4 className="font-semibold mb-2">العنوان</h4>
-                <p className="text-gray-600">القاهرة، مصر</p>
+                <p className="text-gray-600">طريق الكلية البحرية - خلف مدرسة المنار - المعمورة البلد - الاسكندرية</p>
               </div>
             </div>
 
@@ -186,7 +186,7 @@ const AboutUs = () => {
               <p className="text-gray-600 mb-4">نحن هنا لخدمتكم ونتطلع لسماع آرائكم واقتراحاتكم</p>
               <div className="flex justify-center space-x-reverse space-x-4">
                 <a
-                  href="https://wa.me/201001234567"
+                  href="https://wa.me/201270439417"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 transition-colors"
@@ -194,7 +194,7 @@ const AboutUs = () => {
                   واتساب
                 </a>
                 <a
-                  href="https://t.me/roiapublishing"
+                  href="https://t.me/+201270439417"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-colors"

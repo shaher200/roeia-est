@@ -37,22 +37,22 @@ const Header = () => {
             </Link>
           </div>
 
-          {/* Navigation - تحسين للموبايل */}
-          <nav className="border-t py-2 bg-white">
+          {/* Navigation - تقليل المساحة إلى النصف */}
+          <nav className="border-t py-1 bg-white">
             <div className="flex justify-center space-x-reverse space-x-1">
-              <Link to="/" className="text-blue-800 hover:text-blue-600 text-xs font-medium py-2 px-1">
+              <Link to="/" className="text-blue-800 hover:text-blue-600 text-xs font-medium py-1 px-1">
                 الرئيسية
               </Link>
-              <Link to="/categories" className="text-blue-800 hover:text-blue-600 text-xs font-medium py-2 px-1">
+              <Link to="/categories" className="text-blue-800 hover:text-blue-600 text-xs font-medium py-1 px-1">
                 التصنيفات
               </Link>
-              <Link to="/knowledge-club" className="text-blue-800 hover:text-blue-600 text-xs font-medium py-2 px-1">
+              <Link to="/knowledge-club" className="text-blue-800 hover:text-blue-600 text-xs font-medium py-1 px-1">
                 نادي المعرفة
               </Link>
-              <Link to="/draws-prizes" className="text-blue-800 hover:text-blue-600 text-xs font-medium py-2 px-1">
+              <Link to="/draws-prizes" className="text-blue-800 hover:text-blue-600 text-xs font-medium py-1 px-1">
                 السحوبات
               </Link>
-              <Link to="/about" className="text-blue-800 hover:text-blue-600 text-xs font-medium py-2 px-1">
+              <Link to="/about" className="text-blue-800 hover:text-blue-600 text-xs font-medium py-1 px-1">
                 من نحن
               </Link>
             </div>
