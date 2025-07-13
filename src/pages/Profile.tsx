@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { User, ShoppingBag, Award } from 'lucide-react';
+import { Json } from '@/integrations/supabase/types';
 
 interface Profile {
   id: string;
@@ -22,7 +23,7 @@ interface Order {
   total_amount: number;
   status: string;
   created_at: string;
-  items: any[];
+  items: Json;
 }
 
 interface Membership {
