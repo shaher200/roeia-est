@@ -29,10 +29,11 @@ const Auth = () => {
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
+    if (!formData.name.trim()) {
+      newErrors.name = 'الاسم مطلوب';
+    }
+
     if (!isLogin) {
-      if (!formData.name.trim()) {
-        newErrors.name = 'الاسم مطلوب';
-      }
       if (!formData.phone.trim()) {
         newErrors.phone = 'رقم الهاتف مطلوب';
       }
@@ -41,9 +42,6 @@ const Auth = () => {
       }
     }
 
-    if (!formData.email.trim()) {
-      newErrors.email = 'البريد الإلكتروني مطلوب';
-    }
     if (!formData.password.trim()) {
       newErrors.password = 'كلمة المرور مطلوبة';
     }
@@ -60,9 +58,9 @@ const Auth = () => {
     if (!validateForm()) return;
 
     if (isLogin) {
-      await signIn(formData.email, formData.password);
+      await signIn(formData.name, formData.password);
     } else {
-      await signUp(formData.email, formData.password, formData.name, formData.phone);
+      await signUp(formData.name, formData.password, formData.phone, formData.email);
     }
   };
 
@@ -82,21 +80,21 @@ const Auth = () => {
           </h1>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <Label htmlFor="name">الاسم *</Label>
+              <Input
+                id="name"
+                type="text"
+                value={formData.name}
+                onChange={(e) => handleInputChange('name', e.target.value)}
+                className="text-right"
+                placeholder="أدخل اسمك"
+              />
+              {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
+            </div>
+
             {!isLogin && (
               <>
-                <div>
-                  <Label htmlFor="name">الاسم *</Label>
-                  <Input
-                    id="name"
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => handleInputChange('name', e.target.value)}
-                    className="text-right"
-                    placeholder="أدخل اسمك الكامل"
-                  />
-                  {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
-                </div>
-
                 <div>
                   <Label htmlFor="phone">رقم الهاتف *</Label>
                   <Input
@@ -109,24 +107,24 @@ const Auth = () => {
                   />
                   {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
                 </div>
+
+                <div>
+                  <Label htmlFor="email">البريد الإلكتروني (اختياري)</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => handleInputChange('email', e.target.value)}
+                    className="text-right"
+                    placeholder="example@email.com"
+                  />
+                  {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+                </div>
               </>
             )}
 
             <div>
-              <Label htmlFor="email">البريد الإلكتروني {!isLogin && '(اختياري)'}</Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => handleInputChange('email', e.target.value)}
-                className="text-right"
-                placeholder="example@email.com"
-              />
-              {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
-            </div>
-
-            <div>
-              <Label htmlFor="password">كلمة المرور</Label>
+              <Label htmlFor="password">كلمة المرور *</Label>
               <Input
                 id="password"
                 type="password"
@@ -140,7 +138,7 @@ const Auth = () => {
 
             {!isLogin && (
               <div>
-                <Label htmlFor="confirmPassword">تأكيد كلمة المرور</Label>
+                <Label htmlFor="confirmPassword">تأكيد كلمة المرور *</Label>
                 <Input
                   id="confirmPassword"
                   type="password"

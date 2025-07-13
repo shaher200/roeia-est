@@ -7,8 +7,8 @@ import { useToast } from '@/hooks/use-toast';
 interface AuthContextType {
   user: User | null;
   session: Session | null;
-  signUp: (email: string, password: string, name: string, phone: string) => Promise<{ error: any }>;
-  signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signUp: (name: string, password: string, phone: string, email?: string) => Promise<{ error: any }>;
+  signIn: (name: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   loading: boolean;
 }
@@ -41,18 +41,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (email: string, password: string, name: string, phone: string) => {
+  const signUp = async (name: string, password: string, phone: string, email?: string) => {
     try {
+      // إنشاء بريد إلكتروني وهمي إذا لم يتم تقديم واحد
+      const userEmail = email || `${name.replace(/\s+/g, '').toLowerCase()}@temp-domain.local`;
       const redirectUrl = `${window.location.origin}/`;
       
       const { error } = await supabase.auth.signUp({
-        email,
+        email: userEmail,
         password,
         options: {
           emailRedirectTo: redirectUrl,
           data: {
             name,
-            phone
+            phone,
+            display_name: name
           }
         }
       });
@@ -66,7 +69,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else {
         toast({
           title: "تم إنشاء الحساب بنجاح",
-          description: "يرجى تسجيل الدخول",
+          description: "يمكنك الآن تسجيل الدخول",
         });
       }
 
@@ -81,17 +84,45 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (name: string, password: string) => {
     try {
+      // البحث عن المستخدم بالاسم أولاً
+      const { data: profiles, error: profileError } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('name', name)
+        .single();
+
+      if (profileError || !profiles) {
+        // إذا لم نجد المستخدم، جرب بريد إلكتروني وهمي
+        const tempEmail = `${name.replace(/\s+/g, '').toLowerCase()}@temp-domain.local`;
+        
+        const { error } = await supabase.auth.signInWithPassword({
+          email: tempEmail,
+          password,
+        });
+
+        if (error) {
+          toast({
+            title: "خطأ في تسجيل الدخول",
+            description: "الاسم أو كلمة المرور غير صحيحة",
+            variant: "destructive",
+          });
+        }
+
+        return { error };
+      }
+
+      // استخدم البريد الإلكتروني المحفوظ
       const { error } = await supabase.auth.signInWithPassword({
-        email,
+        email: profiles.email || `${name.replace(/\s+/g, '').toLowerCase()}@temp-domain.local`,
         password,
       });
 
       if (error) {
         toast({
           title: "خطأ في تسجيل الدخول",
-          description: error.message,
+          description: "الاسم أو كلمة المرور غير صحيحة",
           variant: "destructive",
         });
       }
@@ -100,7 +131,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error: any) {
       toast({
         title: "خطأ في تسجيل الدخول",
-        description: error.message,
+        description: "الاسم أو كلمة المرور غير صحيحة",
         variant: "destructive",
       });
       return { error };
