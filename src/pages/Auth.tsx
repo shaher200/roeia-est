@@ -12,7 +12,6 @@ const Auth = () => {
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
-    email: '',
     password: '',
     confirmPassword: ''
   });
@@ -60,7 +59,7 @@ const Auth = () => {
     if (isLogin) {
       await signIn(formData.name, formData.password);
     } else {
-      await signUp(formData.name, formData.password, formData.phone, formData.email);
+      await signUp(formData.name, formData.password, formData.phone);
     }
   };
 
@@ -94,33 +93,18 @@ const Auth = () => {
             </div>
 
             {!isLogin && (
-              <>
-                <div>
-                  <Label htmlFor="phone">رقم الهاتف *</Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    value={formData.phone}
-                    onChange={(e) => handleInputChange('phone', e.target.value)}
-                    className="text-right"
-                    placeholder="01xxxxxxxxx"
-                  />
-                  {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
-                </div>
-
-                <div>
-                  <Label htmlFor="email">البريد الإلكتروني (اختياري)</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => handleInputChange('email', e.target.value)}
-                    className="text-right"
-                    placeholder="example@email.com"
-                  />
-                  {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
-                </div>
-              </>
+              <div>
+                <Label htmlFor="phone">رقم الهاتف *</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => handleInputChange('phone', e.target.value)}
+                  className="text-right"
+                  placeholder="01xxxxxxxxx"
+                />
+                {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
+              </div>
             )}
 
             <div>
@@ -164,7 +148,6 @@ const Auth = () => {
                 setFormData({
                   name: '',
                   phone: '',
-                  email: '',
                   password: '',
                   confirmPassword: ''
                 });
