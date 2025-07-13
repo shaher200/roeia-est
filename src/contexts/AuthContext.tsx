@@ -45,13 +45,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       // إنشاء بريد إلكتروني وهمي باستخدام الاسم
       const userEmail = `${name.replace(/\s+/g, '').toLowerCase()}@temp-domain.local`;
-      const redirectUrl = `${window.location.origin}/`;
       
       const { data, error } = await supabase.auth.signUp({
         email: userEmail,
         password,
         options: {
-          emailRedirectTo: redirectUrl,
           data: {
             name,
             phone,
@@ -69,30 +67,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { error };
       }
 
-      if (data.user) {
-        // إنشاء ملف تعريف المستخدم مباشرة
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert([
-            {
-              user_id: data.user.id,
-              name,
-              phone,
-              email: userEmail
-            }
-          ]);
+      toast({
+        title: "تم إنشاء الحساب بنجاح",
+        description: "يمكنك الآن تسجيل الدخول",
+      });
 
-        if (profileError) {
-          console.error('Profile creation error:', profileError);
-        }
-
-        toast({
-          title: "تم إنشاء الحساب بنجاح",
-          description: "يمكنك الآن تسجيل الدخول",
-        });
-      }
-
-      return { error };
+      return { error: null };
     } catch (error: any) {
       toast({
         title: "خطأ في التسجيل",
