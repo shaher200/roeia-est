@@ -1,211 +1,184 @@
 
 import { useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { CheckCircle } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-interface CartItem {
-  id: number;
-  title: string;
-  author: string;
-  price: number;
-  cover: string;
-  quantity: number;
-}
-
 interface CheckoutFormProps {
-  items: CartItem[];
+  items: Array<{
+    id: number;
+    title: string;
+    price: number;
+    quantity: number;
+  }>;
   totalPrice: number;
   onOrderSubmit: () => void;
   onBack: () => void;
 }
 
 const CheckoutForm = ({ items, totalPrice, onOrderSubmit, onBack }: CheckoutFormProps) => {
-  const { toast } = useToast();
-  const [formData, setFormData] = useState({
-    fullName: '',
-    phoneNumber: '',
-    paymentMethod: '',
-    receipt: null as File | null
+  const [customerInfo, setCustomerInfo] = useState({
+    name: '',
+    phone: '',
+    address: ''
   });
-  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { user } = useAuth();
+  const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleInputChange = (field: string, value: string) => {
+    setCustomerInfo(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.fullName || !formData.phoneNumber || !formData.paymentMethod) {
+    if (!customerInfo.name || !customerInfo.phone || !customerInfo.address) {
       toast({
-        title: "خطأ في البيانات",
-        description: "يرجى ملء جميع الحقول المطلوبة",
-        variant: "destructive"
+        title: "خطأ",
+        description: "يرجى تعبئة جميع الحقول المطلوبة",
+        variant: "destructive",
       });
       return;
     }
 
-    // Phone validation
-    const phoneRegex = /^(010|011|012|015)\d{8}$/;
-    if (!phoneRegex.test(formData.phoneNumber)) {
-      toast({
-        title: "رقم الهاتف غير صحيح",
-        description: "يجب أن يبدأ الرقم بـ 010 أو 011 أو 012 أو 015 ويتكون من 11 رقم",
-        variant: "destructive"
-      });
-      return;
-    }
+    setIsSubmitting(true);
 
-    setIsSubmitted(true);
+    try {
+      // Save order to database if user is logged in
+      if (user) {
+        const { error } = await supabase
+          .from('orders')
+          .insert({
+            user_id: user.id,
+            items: items,
+            total_amount: totalPrice,
+            customer_name: customerInfo.name,
+            customer_phone: customerInfo.phone,
+            customer_address: customerInfo.address,
+            status: 'pending'
+          });
+
+        if (error) {
+          throw error;
+        }
+      }
+
+      setShowSuccess(true);
+    } catch (error: any) {
+      toast({
+        title: "خطأ في معالجة الطلب",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleNewOrder = () => {
-    setIsSubmitted(false);
-    setFormData({
-      fullName: '',
-      phoneNumber: '',
-      paymentMethod: '',
-      receipt: null
-    });
     onOrderSubmit();
+    setShowSuccess(false);
+    setCustomerInfo({ name: '', phone: '', address: '' });
   };
 
-  if (isSubmitted) {
+  if (showSuccess) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-2xl mx-auto text-center">
-          <div className="bg-green-50 border border-green-200 rounded-lg p-8">
-            <div className="w-16 h-16 bg-green-500 text-white rounded-lg flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            <h2 className="text-2xl font-bold text-green-800 mb-4">
-              تم شراء الكتب بنجاح
-            </h2>
-            <p className="text-green-700 text-lg mb-6">
-              نشكركم على الشراء من مؤسسة رؤية سيتم التواصل خلال 24 ساعة لاستكمال طلب الشراء وشحن الكتب
-            </p>
-            <Button 
-              onClick={handleNewOrder}
-              variant="outline"
-            >
-              شراء جديد
-            </Button>
-          </div>
+      <div className="text-center py-12">
+        <div className="mb-6">
+          <CheckCircle className="h-24 w-24 text-green-500 mx-auto mb-4" />
+          <h2 className="text-3xl font-bold text-green-600 mb-4">تم شراء الكتب بنجاح</h2>
+          <p className="text-lg text-gray-700 mb-2">نشكركم على الشراء من مؤسسة رؤية</p>
+          <p className="text-gray-600">سيتم التواصل خلال 24 ساعة لاستكمال طلب الشراء وشحن الكتب</p>
         </div>
+        <Button onClick={handleNewOrder} className="bg-blue-600 hover:bg-blue-700">
+          طلب جديد
+        </Button>
       </div>
     );
   }
 
   return (
-    <Card>
-      <CardContent className="p-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">إتمام الطلب</h2>
-        
-        <div className="mb-6 p-4 bg-blue-50 rounded-lg">
+    <div>
+      <h2 className="text-2xl font-bold mb-6">إتمام الطلب</h2>
+
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div>
+          <Label htmlFor="name">الاسم الكامل *</Label>
+          <Input
+            id="name"
+            type="text"
+            value={customerInfo.name}
+            onChange={(e) => handleInputChange('name', e.target.value)}
+            required
+            className="text-right"
+            placeholder="أدخل اسمك الكامل"
+          />
+        </div>
+
+        <div>
+          <Label htmlFor="phone">رقم الهاتف *</Label>
+          <Input
+            id="phone"
+            type="tel"
+            value={customerInfo.phone}
+            onChange={(e) => handleInputChange('phone', e.target.value)}
+            required
+            className="text-right"
+            placeholder="01xxxxxxxxx"
+          />
+        </div>
+
+        <div>
+          <Label htmlFor="address">العنوان *</Label>
+          <Textarea
+            id="address"
+            value={customerInfo.address}
+            onChange={(e) => handleInputChange('address', e.target.value)}
+            required
+            className="text-right min-h-[100px]"
+            placeholder="أدخل عنوانك الكامل بالتفصيل"
+          />
+        </div>
+
+        <div className="bg-gray-50 p-4 rounded-lg">
           <h3 className="font-semibold mb-2">ملخص الطلب:</h3>
-          {items.map((item) => (
-            <div key={item.id} className="flex justify-between text-sm mb-1">
-              <span>{item.title} × {item.quantity}</span>
-              <span>{item.price * item.quantity} جنيه</span>
-            </div>
-          ))}
+          <div className="space-y-1">
+            {items.map((item) => (
+              <div key={item.id} className="flex justify-between text-sm">
+                <span>{item.title} × {item.quantity}</span>
+                <span>{item.price * item.quantity} جنيه</span>
+              </div>
+            ))}
+          </div>
           <div className="border-t pt-2 mt-2 font-bold">
             <div className="flex justify-between">
-              <span>المجموع الكلي:</span>
+              <span>الإجمالي:</span>
               <span>{totalPrice} جنيه</span>
             </div>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <Label htmlFor="fullName">الاسم الكامل *</Label>
-            <Input
-              id="fullName"
-              type="text"
-              value={formData.fullName}
-              onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-              placeholder="أدخل الاسم الكامل بالعربية"
-              className="text-right"
-              required
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="phoneNumber">رقم الهاتف *</Label>
-            <Input
-              id="phoneNumber"
-              type="tel"
-              value={formData.phoneNumber}
-              onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
-              placeholder="01xxxxxxxxx"
-              className="text-right"
-              required
-            />
-            <p className="text-sm text-gray-500 mt-1">
-              يجب أن يبدأ بـ 010 أو 011 أو 012 أو 015
-            </p>
-          </div>
-
-          <div>
-            <Label htmlFor="paymentMethod">طريقة الدفع *</Label>
-            <Select value={formData.paymentMethod} onValueChange={(value) => setFormData({ ...formData, paymentMethod: value })}>
-              <SelectTrigger>
-                <SelectValue placeholder="اختر طريقة الدفع" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="vodafone-cash">فودافون كاش</SelectItem>
-                <SelectItem value="instapay">انستاباي</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {formData.paymentMethod && (
-            <div className="p-4 bg-orange-50 rounded-lg">
-              <h4 className="font-semibold text-orange-800 mb-2">تعليمات الدفع:</h4>
-              {formData.paymentMethod === 'vodafone-cash' && (
-                <div className="text-blue-500 text-sm">
-                  <p>• قم بتحويل المبلغ إلى محفظة رقم : 01026217597</p>
-                  <p>• أرسل صورة من إيصال التحويل</p>
-                </div>
-              )}
-              {formData.paymentMethod === 'instapay' && (
-                <div className="text-blue-500 text-sm">
-                  <p>• قم بتحويل المبلغ إلى حساب انستاباى رقم: 01270439417</p>
-                  <p>• أرسل صورة من إيصال التحويل</p>
-                </div>
-              )}
-            </div>
-          )}
-
-          <div>
-            <Label htmlFor="receipt">رفع إيصال الدفع</Label>
-            <Input
-              id="receipt"
-              type="file"
-              accept="image/*"
-              onChange={(e) => setFormData({ ...formData, receipt: e.target.files?.[0] || null })}
-              className="text-right"
-            />
-          </div>
-
-          <div className="flex gap-4">
-            <Button type="submit" className="flex-1">
-              تأكيد الطلب
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onBack}
-            >
-              العودة للسلة
-            </Button>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
+        <div className="flex gap-4">
+          <Button 
+            type="submit" 
+            className="flex-1"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? 'جارٍ المعالجة...' : 'تأكيد الطلب'}
+          </Button>
+          <Button type="button" variant="outline" onClick={onBack}>
+            رجوع
+          </Button>
+        </div>
+      </form>
+    </div>
   );
 };
 

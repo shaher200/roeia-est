@@ -1,315 +1,206 @@
 
 import { useState } from 'react';
 import Layout from '@/components/Layout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Upload, Star, Gift, Users, Video, MessageSquare } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { CheckCircle, BookOpen, Trophy, Users, MessageCircle } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 const KnowledgeClub = () => {
   const [formData, setFormData] = useState({
-    fullName: '',
-    phoneNumber: '',
-    sponsorCode: '',
-    paymentMethod: '',
-    receipt: null as File | null
+    name: '',
+    phone: ''
   });
-  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { user } = useAuth();
   const { toast } = useToast();
-
-  const benefits = [
-    {
-      icon: Gift,
-      title: 'سحب شهري بقيمة 5000 جنيه',
-      description: 'فرصة للفوز بجائزة نقدية كل شهر'
-    },
-    {
-      icon: Star,
-      title: 'سحب على عمرة شاملة التكاليف',
-      description: 'عمرة شاملة التكاليف'
-    },
-    {
-      icon: Users,
-      title: 'خصم 20% على شراء الكتب من التطبيق',
-      description: 'خصم حصري لأعضاء النادي'
-    },
-    {
-      icon: MessageSquare,
-      title: 'قناة تيليجرام خاصة بأعضاء نادى المعرفة',
-      description: 'محتوى حصري وتفاعل مباشر'
-    },
-    {
-      icon: Video,
-      title: 'قناة يوتيوب حصرية تفاعلية مع الاعضاء',
-      description: 'فيديوهات تعليمية مميزة'
-    },
-    {
-      icon: Gift,
-      title: 'مكافأة الإحالة',
-      description: '100 جنيه لكل 5 أصدقاء تدعوهم'
-    }
-  ];
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] || null;
-    setFormData(prev => ({ ...prev, receipt: file }));
-  };
-
-  const validateForm = () => {
-    if (!formData.fullName.trim()) {
-      toast({
-        title: "خطأ",
-        description: "يرجى إدخال الاسم الكامل",
-        variant: "destructive"
-      });
-      return false;
-    }
-
-    const phoneRegex = /^(010|011|012|015)\d{8}$/;
-    if (!phoneRegex.test(formData.phoneNumber)) {
-      toast({
-        title: "خطأ",
-        description: "يرجى إدخال رقم هاتف صحيح (11 رقم يبدأ بـ 010/011/012/015)",
-        variant: "destructive"
-      });
-      return false;
-    }
-
-    if (!formData.paymentMethod) {
-      toast({
-        title: "خطأ",
-        description: "يرجى اختيار طريقة الدفع",
-        variant: "destructive"
-      });
-      return false;
-    }
-
-    if (!formData.receipt) {
-      toast({
-        title: "خطأ",
-        description: "يرجى رفع صورة إيصال الدفع",
-        variant: "destructive"
-      });
-      return false;
-    }
-
-    return true;
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (validateForm()) {
-      setIsSubmitted(true);
+    if (!formData.name || !formData.phone) {
       toast({
-        title: "تم الإرسال بنجاح",
-        description: "سيتم مراجعة طلبكم خلال 24 ساعة",
+        title: "خطأ",
+        description: "يرجى تعبئة جميع الحقول المطلوبة",
+        variant: "destructive",
       });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // Save membership to database if user is logged in
+      if (user) {
+        const { error } = await supabase
+          .from('knowledge_club_memberships')
+          .insert({
+            user_id: user.id,
+            name: formData.name,
+            phone: formData.phone,
+            status: 'active'
+          });
+
+        if (error) {
+          throw error;
+        }
+      }
+
+      setShowSuccess(true);
+      setFormData({ name: '', phone: '' });
+    } catch (error: any) {
+      toast({
+        title: "خطأ في الاشتراك",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
-
-  if (isSubmitted) {
-    return (
-      <Layout>
-        <div className="container mx-auto px-4 py-8">
-          <div className="max-w-2xl mx-auto text-center">
-            <div className="bg-green-50 border border-green-200 rounded-lg p-8">
-              <div className="text-green-600 text-6xl mb-4">✅</div>
-              <h2 className="text-2xl font-bold text-green-800 mb-4">
-                تم الاشتراك بنجاح!
-              </h2>
-              <p className="text-green-700 text-lg mb-6">
-                نشكركم على الاشتراك في نادي المعرفة. سيتم مراجعة الطلب خلال 24 ساعة.
-              </p>
-              <Button 
-                onClick={() => {
-                  setIsSubmitted(false);
-                  setFormData({
-                    fullName: '',
-                    phoneNumber: '',
-                    sponsorCode: '',
-                    paymentMethod: '',
-                    receipt: null
-                  });
-                }}
-                variant="outline"
-              >
-                اشتراك جديد
-              </Button>
-            </div>
-          </div>
-        </div>
-      </Layout>
-    );
-  }
 
   return (
     <Layout>
       <div className="container mx-auto px-4 py-6">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">نادي المعرفة</h1>
-          <p className="text-gray-600 text-lg">
-            انضم إلينا واستمتع بتجربة معرفية فريدة مع مزايا حصرية
+        {/* Hero Section */}
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">نادي المعرفة</h1>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            انضم إلى مجتمع القراء والمثقفين واستمتع بتجربة تعليمية متميزة مع خصومات حصرية ومسابقات شهرية
           </p>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-8">
-          {/* Benefits Section */}
-          <div>
-            <Card className="mb-6">
-              <CardHeader>
-                <CardTitle className="text-xl text-center text-blue-600">
-                  مزايا العضوية
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-4">
-                  {benefits.map((benefit, index) => {
-                    const IconComponent = benefit.icon;
-                    return (
-                      <div key={index} className="flex items-start space-x-reverse space-x-3">
-                        <div className="bg-blue-100 p-2 rounded-lg">
-                          <IconComponent className="h-5 w-5 text-blue-600" />
-                        </div>
-                        <div>
-                          <h4 className="font-semibold text-gray-900">{benefit.title}</h4>
-                          <p className="text-gray-600 text-sm">{benefit.description}</p>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Alert className="bg-orange-50 border-orange-200">
-              <AlertDescription className="text-orange-800">
-                <strong>رسوم الاشتراك:</strong> 100 جنيه فقط لمدة سنتين كاملتين
-              </AlertDescription>
-            </Alert>
-          </div>
-
-          {/* Registration Form */}
+        {/* Features Grid */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
           <Card>
-            <CardHeader>
-              <CardTitle className="text-xl text-center">نموذج التسجيل</CardTitle>
+            <CardHeader className="text-center">
+              <BookOpen className="h-12 w-12 mx-auto text-blue-600 mb-4" />
+              <CardTitle className="text-lg">خصومات حصرية</CardTitle>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div>
-                  <Label htmlFor="fullName">الاسم الكامل *</Label>
-                  <Input
-                    id="fullName"
-                    type="text"
-                    value={formData.fullName}
-                    onChange={(e) => handleInputChange('fullName', e.target.value)}
-                    placeholder="أدخل اسمك الكامل بالعربية"
-                    className="text-right"
-                    required
-                  />
-                </div>
+              <p className="text-gray-600 text-center">احصل على خصم يصل إلى 30% على جميع الكتب</p>
+            </CardContent>
+          </Card>
 
-                <div>
-                  <Label htmlFor="phoneNumber">رقم الهاتف *</Label>
-                  <Input
-                    id="phoneNumber"
-                    type="tel"
-                    value={formData.phoneNumber}
-                    onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
-                    placeholder="01xxxxxxxxx"
-                    className="text-right ltr"
-                    maxLength={11}
-                    required
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    11 رقم يبدأ بـ 010 أو 011 أو 012 أو 015
-                  </p>
-                </div>
+          <Card>
+            <CardHeader className="text-center">
+              <Trophy className="h-12 w-12 mx-auto text-orange-600 mb-4" />
+              <CardTitle className="text-lg">مسابقات شهرية</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600 text-center">شارك في مسابقات شهرية واربح جوائز قيمة</p>
+            </CardContent>
+          </Card>
 
-                <div>
-                  <Label htmlFor="sponsorCode">كود الراعي (اختياري)</Label>
-                  <Input
-                    id="sponsorCode"
-                    type="text"
-                    value={formData.sponsorCode}
-                    onChange={(e) => handleInputChange('sponsorCode', e.target.value)}
-                    placeholder="أدخل كود الراعي إن وجد"
-                    className="text-right"
-                  />
-                </div>
+          <Card>
+            <CardHeader className="text-center">
+              <Users className="h-12 w-12 mx-auto text-green-600 mb-4" />
+              <CardTitle className="text-lg">مجتمع القراء</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600 text-center">تفاعل مع مجتمع من محبي القراءة والمعرفة</p>
+            </CardContent>
+          </Card>
 
-                <div>
-                  <Label className="text-sm font-medium">طريقة الدفع *</Label>
-                  <RadioGroup 
-                    value={formData.paymentMethod} 
-                    onValueChange={(value) => handleInputChange('paymentMethod', value)}
-                    className="mt-3 space-y-4"
-                  >
-                    <div className="border rounded-lg p-4 hover:bg-gray-50">
-                      <div className="flex items-center space-x-reverse space-x-2 mb-2">
-                        <RadioGroupItem value="vodafone" id="vodafone" />
-                        <Label htmlFor="vodafone" className="font-medium">فودافون كاش</Label>
+          <Card>
+            <CardHeader className="text-center">
+              <MessageCircle className="h-12 w-12 mx-auto text-purple-600 mb-4" />
+              <CardTitle className="text-lg">قنوات تعليمية</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600 text-center">اشترك في قنوات تعليمية خاصة بأعضاء النادي</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Subscription Section */}
+        <div className="max-w-2xl mx-auto">
+          <Card>
+            <CardHeader className="text-center">
+              <CardTitle className="text-2xl">اشترك الآن في نادي المعرفة</CardTitle>
+              <CardDescription>
+                رسوم الاشتراك السنوي: <span className="text-2xl font-bold text-orange-600">100 جنيه فقط</span>
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {!user ? (
+                <div className="text-center">
+                  <p className="text-gray-600 mb-4">يجب عليك تسجيل الدخول أولاً للاشتراك في نادي المعرفة</p>
+                  <Button onClick={() => window.location.href = '/auth'}>
+                    تسجيل الدخول
+                  </Button>
+                </div>
+              ) : (
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button className="w-full bg-gradient-to-r from-blue-600 to-orange-500 hover:from-blue-700 hover:to-orange-600">
+                      اشترك الآن
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>تأكيد الاشتراك</DialogTitle>
+                      <DialogDescription>
+                        اشتراك نادي المعرفة - 100 جنيه سنوياً
+                      </DialogDescription>
+                    </DialogHeader>
+
+                    {showSuccess ? (
+                      <div className="text-center py-6">
+                        <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
+                        <h3 className="text-xl font-bold text-green-600 mb-2">تم الاشتراك بنجاح!</h3>
+                        <p className="text-gray-600">مرحباً بك في نادي المعرفة</p>
                       </div>
-                      {formData.paymentMethod === 'vodafone' && (
-                        <div className="mr-6 text-sm text-blue-500 space-y-1">
-                          <p>• قم بتحويل المبلغ على محفظة رقم 01026217597</p>
-                          <p>• احتفظ بإيصال العملية</p>
-                          <p>• ارفق صورة الإيصال أدناه</p>
+                    ) : (
+                      <form onSubmit={handleSubmit} className="space-y-4">
+                        <div>
+                          <Label htmlFor="name">الاسم الكامل</Label>
+                          <Input
+                            id="name"
+                            type="text"
+                            value={formData.name}
+                            onChange={(e) => handleInputChange('name', e.target.value)}
+                            required
+                            className="text-right"
+                            placeholder="أدخل اسمك الكامل"
+                          />
                         </div>
-                      )}
-                    </div>
-                    
-                    <div className="border rounded-lg p-4 hover:bg-gray-50">
-                      <div className="flex items-center space-x-reverse space-x-2 mb-2">
-                        <RadioGroupItem value="instapay" id="instapay" />
-                        <Label htmlFor="instapay" className="font-medium">انستاباي</Label>
-                      </div>
-                      {formData.paymentMethod === 'instapay' && (
-                        <div className="mr-6 text-sm text-blue-500 space-y-1">
-                          <p>• قم بالتحويل عبر انستاباي على رقم 01270439417</p>
-                          <p>• احتفظ بإيصال العملية</p>
-                          <p>• ارفق صورة الإيصال أدناه</p>
+
+                        <div>
+                          <Label htmlFor="phone">رقم الهاتف</Label>
+                          <Input
+                            id="phone"
+                            type="tel"
+                            value={formData.phone}
+                            onChange={(e) => handleInputChange('phone', e.target.value)}
+                            required
+                            className="text-right"
+                            placeholder="01xxxxxxxxx"
+                          />
                         </div>
-                      )}
-                    </div>
-                  </RadioGroup>
-                </div>
 
-                <div>
-                  <Label htmlFor="receipt">صورة إيصال الدفع *</Label>
-                  <div className="mt-2">
-                    <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
-                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                        <Upload className="w-8 h-8 mb-2 text-gray-400" />
-                        <p className="text-sm text-gray-500">
-                          {formData.receipt ? formData.receipt.name : 'اضغط لرفع الصورة'}
-                        </p>
-                      </div>
-                      <input
-                        id="receipt"
-                        type="file"
-                        className="hidden"
-                        accept="image/*"
-                        onChange={handleFileUpload}
-                        required
-                      />
-                    </label>
-                  </div>
-                </div>
-
-                <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700">
-                  إرسال طلب الاشتراك
-                </Button>
-              </form>
+                        <Button 
+                          type="submit" 
+                          className="w-full"
+                          disabled={isSubmitting}
+                        >
+                          {isSubmitting ? 'جارٍ المعالجة...' : 'تأكيد الاشتراك - 100 جنيه'}
+                        </Button>
+                      </form>
+                    )}
+                  </DialogContent>
+                </Dialog>
+              )}
             </CardContent>
           </Card>
         </div>
