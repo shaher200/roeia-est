@@ -44,7 +44,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signUp = async (name: string, password: string, phone: string) => {
     try {
       // إنشاء بريد إلكتروني وهمي باستخدام الاسم
-      const userEmail = `${name.replace(/\s+/g, '').toLowerCase()}@temp-domain.local`;
+      const sanitizedName = name.replace(/\s+/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const userEmail = `${sanitizedName}@example.com`;
       const redirectUrl = `${window.location.origin}/`;
       
       const { data, error } = await supabase.auth.signUp({
@@ -88,7 +89,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signIn = async (name: string, password: string) => {
     try {
       // إنشاء البريد الإلكتروني الوهمي المتوقع
-      const tempEmail = `${name.replace(/\s+/g, '').toLowerCase()}@temp-domain.local`;
+      const sanitizedName = name.replace(/\s+/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const tempEmail = `${sanitizedName}@example.com`;
       
       const { error } = await supabase.auth.signInWithPassword({
         email: tempEmail,
