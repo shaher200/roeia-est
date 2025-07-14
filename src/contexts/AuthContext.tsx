@@ -43,8 +43,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signUp = async (name: string, password: string, phone: string) => {
     try {
-      // إنشاء بريد إلكتروني وهمي باستخدام رقم الهاتف
-      const userEmail = `${phone}@example.com`;
+      // إنشاء بريد إلكتروني صحيح باستخدام رقم الهاتف
+      const userEmail = `user${phone}@bookstore.local`;
       const redirectUrl = `${window.location.origin}/`;
       
       const { data, error } = await supabase.auth.signUp({
@@ -87,8 +87,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signIn = async (phone: string, password: string) => {
     try {
-      // إنشاء البريد الإلكتروني الوهمي المتوقع باستخدام رقم الهاتف
-      const tempEmail = `${phone}@example.com`;
+      // إنشاء البريد الإلكتروني المتوقع باستخدام رقم الهاتف
+      const tempEmail = `user${phone}@bookstore.local`;
       
       const { error } = await supabase.auth.signInWithPassword({
         email: tempEmail,
