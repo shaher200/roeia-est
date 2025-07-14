@@ -28,24 +28,28 @@ const Auth = () => {
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.name.trim()) {
-      newErrors.name = 'الاسم مطلوب';
-    }
-
     if (!isLogin) {
+      if (!formData.name.trim()) {
+        newErrors.name = 'الاسم الثلاثي مطلوب';
+      }
       if (!formData.phone.trim()) {
         newErrors.phone = 'رقم الهاتف مطلوب';
+      } else if (!/^01[0-9]{9}$/.test(formData.phone)) {
+        newErrors.phone = 'رقم الهاتف يجب أن يبدأ بـ 01 ويحتوي على 11 رقم';
       }
       if (formData.password !== formData.confirmPassword) {
         newErrors.confirmPassword = 'كلمات المرور غير متطابقة';
+      }
+    } else {
+      if (!formData.phone.trim()) {
+        newErrors.phone = 'رقم الهاتف مطلوب';
       }
     }
 
     if (!formData.password.trim()) {
       newErrors.password = 'كلمة المرور مطلوبة';
-    }
-    if (formData.password.length < 6) {
-      newErrors.password = 'كلمة المرور يجب أن تكون 6 أحرف على الأقل';
+    } else if (!/^[0-9]{6}$/.test(formData.password)) {
+      newErrors.password = 'كلمة المرور يجب أن تكون 6 أرقام فقط';
     }
 
     setErrors(newErrors);
@@ -57,7 +61,7 @@ const Auth = () => {
     if (!validateForm()) return;
 
     if (isLogin) {
-      await signIn(formData.name, formData.password);
+      await signIn(formData.phone, formData.password);
     } else {
       await signUp(formData.name, formData.password, formData.phone);
     }
@@ -79,43 +83,51 @@ const Auth = () => {
           </h1>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <Label htmlFor="name">الاسم *</Label>
-              <Input
-                id="name"
-                type="text"
-                value={formData.name}
-                onChange={(e) => handleInputChange('name', e.target.value)}
-                className="text-right"
-                placeholder="أدخل اسمك"
-              />
-              {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
-            </div>
-
             {!isLogin && (
               <div>
-                <Label htmlFor="phone">رقم الهاتف *</Label>
+                <Label htmlFor="name">الاسم الثلاثي *</Label>
                 <Input
-                  id="phone"
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => handleInputChange('phone', e.target.value)}
+                  id="name"
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => handleInputChange('name', e.target.value)}
                   className="text-right"
-                  placeholder="01xxxxxxxxx"
+                  placeholder="أدخل اسمك الثلاثي"
                 />
-                {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
+                {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
               </div>
             )}
 
             <div>
-              <Label htmlFor="password">كلمة المرور *</Label>
+              <Label htmlFor="phone">رقم الهاتف *</Label>
+              <Input
+                id="phone"
+                type="tel"
+                value={formData.phone}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, '');
+                  handleInputChange('phone', value);
+                }}
+                className="text-right"
+                placeholder="01xxxxxxxxx"
+                maxLength={11}
+              />
+              {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
+            </div>
+
+            <div>
+              <Label htmlFor="password">كلمة المرور (6 أرقام) *</Label>
               <Input
                 id="password"
                 type="password"
                 value={formData.password}
-                onChange={(e) => handleInputChange('password', e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, '');
+                  handleInputChange('password', value);
+                }}
                 className="text-right"
-                placeholder="أدخل كلمة المرور"
+                placeholder="أدخل 6 أرقام"
+                maxLength={6}
               />
               {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
             </div>
@@ -127,9 +139,13 @@ const Auth = () => {
                   id="confirmPassword"
                   type="password"
                   value={formData.confirmPassword}
-                  onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, '');
+                    handleInputChange('confirmPassword', value);
+                  }}
                   className="text-right"
                   placeholder="أعد إدخال كلمة المرور"
+                  maxLength={6}
                 />
                 {errors.confirmPassword && <p className="text-red-500 text-sm mt-1">{errors.confirmPassword}</p>}
               </div>

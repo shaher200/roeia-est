@@ -8,7 +8,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   signUp: (name: string, password: string, phone: string) => Promise<{ error: any }>;
-  signIn: (name: string, password: string) => Promise<{ error: any }>;
+  signIn: (phone: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   loading: boolean;
 }
@@ -43,9 +43,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signUp = async (name: string, password: string, phone: string) => {
     try {
-      // إنشاء بريد إلكتروني وهمي باستخدام الاسم
-      const sanitizedName = name.replace(/\s+/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
-      const userEmail = `${sanitizedName}@example.com`;
+      // إنشاء بريد إلكتروني وهمي باستخدام رقم الهاتف
+      const userEmail = `${phone}@example.com`;
       const redirectUrl = `${window.location.origin}/`;
       
       const { data, error } = await supabase.auth.signUp({
@@ -86,11 +85,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signIn = async (name: string, password: string) => {
+  const signIn = async (phone: string, password: string) => {
     try {
-      // إنشاء البريد الإلكتروني الوهمي المتوقع
-      const sanitizedName = name.replace(/\s+/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
-      const tempEmail = `${sanitizedName}@example.com`;
+      // إنشاء البريد الإلكتروني الوهمي المتوقع باستخدام رقم الهاتف
+      const tempEmail = `${phone}@example.com`;
       
       const { error } = await supabase.auth.signInWithPassword({
         email: tempEmail,
@@ -100,7 +98,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) {
         toast({
           title: "خطأ في تسجيل الدخول",
-          description: "الاسم أو كلمة المرور غير صحيحة",
+          description: "رقم الهاتف أو كلمة المرور غير صحيحة",
           variant: "destructive",
         });
         return { error };
@@ -115,7 +113,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error: any) {
       toast({
         title: "خطأ في تسجيل الدخول",
-        description: "الاسم أو كلمة المرور غير صحيحة",
+        description: "رقم الهاتف أو كلمة المرور غير صحيحة",
         variant: "destructive",
       });
       return { error };
