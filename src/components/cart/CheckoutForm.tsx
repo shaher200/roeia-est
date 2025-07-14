@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { CheckCircle } from 'lucide-react';
+import { CheckCircle, Upload } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -27,6 +27,8 @@ const CheckoutForm = ({ items, totalPrice, onOrderSubmit, onBack }: CheckoutForm
     phone: '',
     address: ''
   });
+  const [paymentMethod, setPaymentMethod] = useState('');
+  const [paymentReceipt, setPaymentReceipt] = useState<File | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { user } = useAuth();
@@ -43,6 +45,24 @@ const CheckoutForm = ({ items, totalPrice, onOrderSubmit, onBack }: CheckoutForm
       toast({
         title: "خطأ",
         description: "يرجى تعبئة جميع الحقول المطلوبة",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!paymentMethod) {
+      toast({
+        title: "خطأ",
+        description: "يرجى اختيار طريقة الدفع",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!paymentReceipt) {
+      toast({
+        title: "خطأ",
+        description: "يرجى تحميل إيصال الدفع",
         variant: "destructive",
       });
       return;
@@ -145,6 +165,76 @@ const CheckoutForm = ({ items, totalPrice, onOrderSubmit, onBack }: CheckoutForm
             className="text-right min-h-[100px]"
             placeholder="أدخل عنوانك الكامل بالتفصيل"
           />
+        </div>
+
+        <div className="space-y-4">
+          <Label>طريقة الدفع *</Label>
+          <div className="space-y-3">
+            <div className="border rounded-lg p-4">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="radio"
+                  id="vodafone"
+                  name="payment"
+                  value="vodafone"
+                  checked={paymentMethod === 'vodafone'}
+                  onChange={(e) => setPaymentMethod(e.target.value)}
+                  className="ml-2"
+                />
+                <Label htmlFor="vodafone" className="cursor-pointer flex-1">
+                  <div className="font-semibold">فودافون كاش</div>
+                  <div className="text-sm text-gray-600">الرقم: 01026217597</div>
+                </Label>
+              </div>
+            </div>
+            
+            <div className="border rounded-lg p-4">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="radio"
+                  id="instapay"
+                  name="payment"
+                  value="instapay"
+                  checked={paymentMethod === 'instapay'}
+                  onChange={(e) => setPaymentMethod(e.target.value)}
+                  className="ml-2"
+                />
+                <Label htmlFor="instapay" className="cursor-pointer flex-1">
+                  <div className="font-semibold">انستاباي</div>
+                  <div className="text-sm text-gray-600">الحساب: 01270439417</div>
+                </Label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <Label htmlFor="receipt">تحميل إيصال الدفع *</Label>
+          <div className="mt-2">
+            <label htmlFor="receipt" className="flex items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
+              <div className="text-center">
+                {paymentReceipt ? (
+                  <div>
+                    <CheckCircle className="h-8 w-8 text-green-500 mx-auto mb-2" />
+                    <p className="text-sm text-green-600">{paymentReceipt.name}</p>
+                  </div>
+                ) : (
+                  <div>
+                    <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                    <p className="text-sm text-gray-600">اضغط لتحميل إيصال الدفع</p>
+                    <p className="text-xs text-gray-500 mt-1">PNG, JPG, PDF</p>
+                  </div>
+                )}
+              </div>
+            </label>
+            <input
+              id="receipt"
+              type="file"
+              accept=".png,.jpg,.jpeg,.pdf"
+              onChange={(e) => setPaymentReceipt(e.target.files?.[0] || null)}
+              className="hidden"
+            />
+          </div>
         </div>
 
         <div className="bg-gray-50 p-4 rounded-lg">

@@ -45,11 +45,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       // إنشاء بريد إلكتروني وهمي باستخدام الاسم
       const userEmail = `${name.replace(/\s+/g, '').toLowerCase()}@temp-domain.local`;
+      const redirectUrl = `${window.location.origin}/`;
       
       const { data, error } = await supabase.auth.signUp({
         email: userEmail,
         password,
         options: {
+          emailRedirectTo: redirectUrl,
           data: {
             name,
             phone,
