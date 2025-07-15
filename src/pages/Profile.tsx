@@ -15,7 +15,6 @@ interface Profile {
   id: string;
   name: string;
   phone: string;
-  email: string | null;
 }
 
 interface Order {
@@ -42,8 +41,7 @@ const Profile = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
-    phone: '',
-    email: ''
+    phone: ''
   });
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -71,8 +69,7 @@ const Profile = () => {
       setProfile(data);
       setFormData({
         name: data.name || '',
-        phone: data.phone || '',
-        email: data.email || ''
+        phone: data.phone || ''
       });
     }
   };
@@ -113,7 +110,6 @@ const Profile = () => {
       .update({
         name: formData.name,
         phone: formData.phone,
-        email: formData.email,
         updated_at: new Date().toISOString()
       })
       .eq('user_id', user.id);
@@ -190,16 +186,6 @@ const Profile = () => {
                     className="text-right"
                   />
                 </div>
-                <div>
-                  <Label htmlFor="email">البريد الإلكتروني</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                    className="text-right"
-                  />
-                </div>
                 <Button type="submit">حفظ التغييرات</Button>
               </form>
             ) : (
@@ -209,9 +195,6 @@ const Profile = () => {
                 </div>
                 <div>
                   <strong>رقم الهاتف:</strong> {profile.phone}
-                </div>
-                <div>
-                  <strong>البريد الإلكتروني:</strong> {profile.email || 'غير محدد'}
                 </div>
               </div>
             )}

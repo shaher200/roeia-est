@@ -43,15 +43,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signUp = async (name: string, password: string, phone: string) => {
     try {
-      // إنشاء بريد إلكتروني صحيح باستخدام رقم الهاتف
-      const userEmail = `user${phone}@bookstore.local`;
-      const redirectUrl = `${window.location.origin}/`;
+      // إنشاء بريد إلكتروني مؤقت باستخدام رقم الهاتف
+      const tempEmail = `${phone}@temp.local`;
       
       const { data, error } = await supabase.auth.signUp({
-        email: userEmail,
+        email: tempEmail,
         password,
         options: {
-          emailRedirectTo: redirectUrl,
           data: {
             name,
             phone,
@@ -61,11 +59,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       if (error) {
-        toast({
-          title: "خطأ في التسجيل",
-          description: error.message === "User already registered" ? "هذا الاسم مسجل مسبقاً" : "حدث خطأ أثناء التسجيل",
-          variant: "destructive",
-        });
+        if (error.message.includes("already registered")) {
+          toast({
+            title: "خطأ في التسجيل",
+            description: "رقم الهاتف مسجل مسبقاً",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "خطأ في التسجيل",
+            description: "حدث خطأ أثناء التسجيل، تأكد من البيانات",
+            variant: "destructive",
+          });
+        }
         return { error };
       }
 
@@ -88,7 +94,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signIn = async (phone: string, password: string) => {
     try {
       // إنشاء البريد الإلكتروني المتوقع باستخدام رقم الهاتف
-      const tempEmail = `user${phone}@bookstore.local`;
+      const tempEmail = `${phone}@temp.local`;
       
       const { error } = await supabase.auth.signInWithPassword({
         email: tempEmail,
