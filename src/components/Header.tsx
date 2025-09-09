@@ -1,13 +1,13 @@
 
 import { Link } from 'react-router-dom';
-import { ShoppingCart, User } from 'lucide-react';
+import { ShoppingCart, User, Settings } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import TickerBar from './TickerBar';
 
 const Header = () => {
   const { getTotalItems } = useCart();
-  const { user } = useAuth();
+  const { user, profile, signOut } = useAuth();
   const totalItems = getTotalItems();
 
   return (
@@ -30,6 +30,14 @@ const Header = () => {
 
             {/* User Actions */}
             <div className="flex items-center space-x-reverse space-x-4">
+              {/* Admin Dashboard Button */}
+              {profile?.role === 'admin' && (
+                <Link to="/admin" className="flex items-center space-x-reverse space-x-2 text-red-600 hover:text-red-800 transition-colors">
+                  <Settings className="h-6 w-6" />
+                  <span className="text-sm font-medium">لوحة التحكم</span>
+                </Link>
+              )}
+
               {/* Cart Icon */}
               <Link to="/cart" className="relative">
                 <ShoppingCart className="h-6 w-6 text-gray-600 hover:text-blue-600 transition-colors" />

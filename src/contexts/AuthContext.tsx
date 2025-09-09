@@ -7,9 +7,9 @@ import { useToast } from '@/hooks/use-toast';
 interface AuthContextType {
   user: User | null;
   session: Session | null;
-  signUp: (name: string, password: string, phone: string) => Promise<{ error: any; needsVerification?: boolean }>;
+  profile: any;
+  signUp: (name: string, password: string, phone: string) => Promise<{ error: any }>;
   signIn: (phone: string, password: string) => Promise<{ error: any }>; 
-  verifyOtp: (phone: string, token: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   loading: boolean;
 }
@@ -19,23 +19,50 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
+  const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          // Fetch user profile
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('user_id', session.user.id)
+            .single();
+          setProfile(profileData);
+        } else {
+          setProfile(null);
+        }
+        
         setLoading(false);
       }
     );
 
     // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        // Fetch user profile
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .single();
+        setProfile(profileData);
+      } else {
+        setProfile(null);
+      }
+      
       setLoading(false);
     });
 
@@ -44,8 +71,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 const signUp = async (name: string, password: string, phone: string) => {
   try {
+    const tempEmail = `${phone}@temp.com`;
     const { data, error } = await supabase.auth.signUp({
-      phone,
+      email: tempEmail,
       password,
       options: {
         data: {
@@ -65,20 +93,12 @@ const signUp = async (name: string, password: string, phone: string) => {
       return { error };
     }
 
-    if (!data.session) {
-      toast({
-        title: "تم إرسال رمز التحقق",
-        description: "يرجى إدخال الرمز المرسل عبر رسالة نصية لإتمام التسجيل",
-      });
-      return { error: null, needsVerification: true };
-    }
-
     toast({
       title: "تم إنشاء الحساب بنجاح",
       description: "مرحباً بك",
     });
 
-    return { error: null, needsVerification: false };
+    return { error: null };
   } catch (error: any) {
     toast({
       title: "خطأ في التسجيل",
@@ -91,8 +111,30 @@ const signUp = async (name: string, password: string, phone: string) => {
 
 const signIn = async (phone: string, password: string) => {
   try {
+    // Check for admin credentials
+    if (phone === '01044444444' && password === '123456') {
+      // Create a mock admin session
+      const adminUser = {
+        id: '00000000-0000-0000-0000-000000000000',
+        phone: '01044444444',
+        name: 'مدير النظام',
+        role: 'admin'
+      };
+      
+      setUser(adminUser as any);
+      setProfile(adminUser);
+      
+      toast({
+        title: "تم تسجيل الدخول كمدير",
+        description: "مرحباً بك في لوحة التحكم",
+      });
+      
+      return { error: null };
+    }
+    
+    const tempEmail = `${phone}@temp.com`;
     const { error } = await supabase.auth.signInWithPassword({
-      phone,
+      email: tempEmail,
       password,
     });
 
@@ -122,52 +164,28 @@ const signIn = async (phone: string, password: string) => {
 };
 
 const signOut = async () => {
-  await supabase.auth.signOut();
+  // Check if admin
+  if (profile?.role === 'admin') {
+    setUser(null);
+    setProfile(null);
+    setSession(null);
+  } else {
+    await supabase.auth.signOut();
+  }
+  
   toast({
     title: "تم تسجيل الخروج بنجاح",
   });
 };
 
-const verifyOtp = async (phone: string, token: string) => {
-  try {
-    const { error } = await supabase.auth.verifyOtp({
-      phone,
-      token,
-      type: 'sms',
-    });
-
-    if (error) {
-      toast({
-        title: "فشل التحقق",
-        description: error.message || "رمز التحقق غير صحيح",
-        variant: "destructive",
-      });
-      return { error };
-    }
-
-    toast({
-      title: "تم تأكيد رقم الهاتف",
-      description: "تم إنشاء الحساب بنجاح",
-    });
-
-    return { error: null };
-  } catch (error: any) {
-    toast({
-      title: "فشل التحقق",
-      description: "حدث خطأ غير متوقع",
-      variant: "destructive",
-    });
-    return { error };
-  }
-};
 
 return (
   <AuthContext.Provider value={{
     user,
     session,
+    profile,
     signUp,
     signIn,
-    verifyOtp,
     signOut,
     loading
   }}>
