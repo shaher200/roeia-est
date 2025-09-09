@@ -7,8 +7,9 @@ import { useToast } from '@/hooks/use-toast';
 interface AuthContextType {
   user: User | null;
   session: Session | null;
-  signUp: (name: string, password: string, phone: string) => Promise<{ error: any }>;
-  signIn: (phone: string, password: string) => Promise<{ error: any }>;
+  signUp: (name: string, password: string, phone: string) => Promise<{ error: any; needsVerification?: boolean }>;
+  signIn: (phone: string, password: string) => Promise<{ error: any }>; 
+  verifyOtp: (phone: string, token: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   loading: boolean;
 }
@@ -41,110 +42,138 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (name: string, password: string, phone: string) => {
-    try {
-      // إنشاء بريد إلكتروني مؤقت باستخدام رقم الهاتف
-      const tempEmail = `${phone}@temp.local`;
-      
-      const { data, error } = await supabase.auth.signUp({
-        email: tempEmail,
-        password,
-        options: {
-          data: {
-            name,
-            phone,
-            display_name: name
-          }
+const signUp = async (name: string, password: string, phone: string) => {
+  try {
+    const { data, error } = await supabase.auth.signUp({
+      phone,
+      password,
+      options: {
+        data: {
+          name,
+          phone,
+          display_name: name
         }
-      });
-
-      if (error) {
-        if (error.message.includes("already registered")) {
-          toast({
-            title: "خطأ في التسجيل",
-            description: "رقم الهاتف مسجل مسبقاً",
-            variant: "destructive",
-          });
-        } else {
-          toast({
-            title: "خطأ في التسجيل",
-            description: "حدث خطأ أثناء التسجيل، تأكد من البيانات",
-            variant: "destructive",
-          });
-        }
-        return { error };
       }
+    });
 
-      toast({
-        title: "تم إنشاء الحساب بنجاح",
-        description: "يمكنك الآن تسجيل الدخول",
-      });
-
-      return { error: null };
-    } catch (error: any) {
+    if (error) {
       toast({
         title: "خطأ في التسجيل",
-        description: "حدث خطأ غير متوقع",
+        description: error.message || "حدث خطأ أثناء التسجيل، تأكد من البيانات",
         variant: "destructive",
       });
       return { error };
     }
-  };
 
-  const signIn = async (phone: string, password: string) => {
-    try {
-      // إنشاء البريد الإلكتروني المتوقع باستخدام رقم الهاتف
-      const tempEmail = `${phone}@temp.local`;
-      
-      const { error } = await supabase.auth.signInWithPassword({
-        email: tempEmail,
-        password,
-      });
-
-      if (error) {
-        toast({
-          title: "خطأ في تسجيل الدخول",
-          description: "رقم الهاتف أو كلمة المرور غير صحيحة",
-          variant: "destructive",
-        });
-        return { error };
-      }
-
+    if (!data.session) {
       toast({
-        title: "تم تسجيل الدخول بنجاح",
-        description: "مرحباً بك",
+        title: "تم إرسال رمز التحقق",
+        description: "يرجى إدخال الرمز المرسل عبر رسالة نصية لإتمام التسجيل",
       });
+      return { error: null, needsVerification: true };
+    }
 
-      return { error: null };
-    } catch (error: any) {
+    toast({
+      title: "تم إنشاء الحساب بنجاح",
+      description: "مرحباً بك",
+    });
+
+    return { error: null, needsVerification: false };
+  } catch (error: any) {
+    toast({
+      title: "خطأ في التسجيل",
+      description: "حدث خطأ غير متوقع",
+      variant: "destructive",
+    });
+    return { error };
+  }
+};
+
+const signIn = async (phone: string, password: string) => {
+  try {
+    const { error } = await supabase.auth.signInWithPassword({
+      phone,
+      password,
+    });
+
+    if (error) {
       toast({
         title: "خطأ في تسجيل الدخول",
-        description: "رقم الهاتف أو كلمة المرور غير صحيحة",
+        description: error.message || "رقم الهاتف أو كلمة المرور غير صحيحة",
         variant: "destructive",
       });
       return { error };
     }
-  };
 
-  const signOut = async () => {
-    await supabase.auth.signOut();
     toast({
-      title: "تم تسجيل الخروج بنجاح",
+      title: "تم تسجيل الدخول بنجاح",
+      description: "مرحباً بك",
     });
-  };
 
-  return (
-    <AuthContext.Provider value={{
-      user,
-      session,
-      signUp,
-      signIn,
-      signOut,
-      loading
-    }}>
-      {children}
-    </AuthContext.Provider>
-  );
+    return { error: null };
+  } catch (error: any) {
+    toast({
+      title: "خطأ في تسجيل الدخول",
+      description: "حدث خطأ غير متوقع",
+      variant: "destructive",
+    });
+    return { error };
+  }
+};
+
+const signOut = async () => {
+  await supabase.auth.signOut();
+  toast({
+    title: "تم تسجيل الخروج بنجاح",
+  });
+};
+
+const verifyOtp = async (phone: string, token: string) => {
+  try {
+    const { error } = await supabase.auth.verifyOtp({
+      phone,
+      token,
+      type: 'sms',
+    });
+
+    if (error) {
+      toast({
+        title: "فشل التحقق",
+        description: error.message || "رمز التحقق غير صحيح",
+        variant: "destructive",
+      });
+      return { error };
+    }
+
+    toast({
+      title: "تم تأكيد رقم الهاتف",
+      description: "تم إنشاء الحساب بنجاح",
+    });
+
+    return { error: null };
+  } catch (error: any) {
+    toast({
+      title: "فشل التحقق",
+      description: "حدث خطأ غير متوقع",
+      variant: "destructive",
+    });
+    return { error };
+  }
+};
+
+return (
+  <AuthContext.Provider value={{
+    user,
+    session,
+    signUp,
+    signIn,
+    verifyOtp,
+    signOut,
+    loading
+  }}>
+    {children}
+  </AuthContext.Provider>
+);
 };
 
 export const useAuth = () => {
