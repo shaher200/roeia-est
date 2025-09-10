@@ -71,31 +71,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 const signUp = async (name: string, password: string, phone: string) => {
   try {
-    const tempEmail = `${phone}@temp.com`;
-    const { data, error } = await supabase.auth.signUp({
-      email: tempEmail,
-      password,
-      options: {
-        data: {
-          name,
-          phone,
-          display_name: name
-        }
-      }
+    // Call edge function to create a confirmed user and store profile
+    const { error: fnError } = await supabase.functions.invoke('admin-signup', {
+      body: { name, phone, password },
     });
 
-    if (error) {
+    if (fnError) {
       toast({
         title: "خطأ في التسجيل",
-        description: error.message || "حدث خطأ أثناء التسجيل، تأكد من البيانات",
+        description: fnError.message || "حدث خطأ أثناء التسجيل، تأكد من البيانات",
         variant: "destructive",
       });
-      return { error };
+      return { error: fnError };
+    }
+
+    // Auto sign-in after successful creation
+    const tempEmail = `${phone}@temp.com`;
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: tempEmail,
+      password,
+    });
+
+    if (signInError) {
+      toast({
+        title: "خطأ في تسجيل الدخول",
+        description: signInError.message || "تعذر تسجيل الدخول بعد إنشاء الحساب",
+        variant: "destructive",
+      });
+      return { error: signInError };
     }
 
     toast({
       title: "تم إنشاء الحساب بنجاح",
-      description: "مرحباً بك",
+      description: "تم تسجيل الدخول تلقائياً، مرحباً بك",
     });
 
     return { error: null };
