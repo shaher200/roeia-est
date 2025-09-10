@@ -59,7 +59,7 @@ serve(async (req) => {
       email,
       password,
       email_confirm: true,
-      user_metadata: {
+      raw_user_meta_data: {
         name,
         phone,
         display_name: name,
