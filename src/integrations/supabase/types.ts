@@ -14,11 +14,83 @@ export type Database = {
   }
   public: {
     Tables: {
+      books: {
+        Row: {
+          author: string
+          category_id: string | null
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          is_available: boolean
+          price: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author: string
+          category_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_available?: boolean
+          price: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author?: string
+          category_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_available?: boolean
+          price?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "books_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       knowledge_club_memberships: {
         Row: {
           id: string
           name: string
           phone: string
+          receipt_image: string | null
           status: string
           subscription_date: string
           user_id: string | null
@@ -27,6 +99,7 @@ export type Database = {
           id?: string
           name: string
           phone: string
+          receipt_image?: string | null
           status?: string
           subscription_date?: string
           user_id?: string | null
@@ -35,6 +108,7 @@ export type Database = {
           id?: string
           name?: string
           phone?: string
+          receipt_image?: string | null
           status?: string
           subscription_date?: string
           user_id?: string | null
@@ -49,6 +123,7 @@ export type Database = {
           customer_phone: string
           id: string
           items: Json
+          receipt_image: string | null
           status: string
           total_amount: number
           user_id: string | null
@@ -60,6 +135,7 @@ export type Database = {
           customer_phone: string
           id?: string
           items: Json
+          receipt_image?: string | null
           status?: string
           total_amount: number
           user_id?: string | null
@@ -71,6 +147,7 @@ export type Database = {
           customer_phone?: string
           id?: string
           items?: Json
+          receipt_image?: string | null
           status?: string
           total_amount?: number
           user_id?: string | null

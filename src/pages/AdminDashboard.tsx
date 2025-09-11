@@ -7,10 +7,14 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Users, ShoppingBag, Award, CreditCard, Trash2, Edit } from 'lucide-react';
+import { Users, ShoppingBag, Award, CreditCard, Trash2, Edit, Plus, Book, Tags, Image } from 'lucide-react';
 
 interface User {
   id: string;
@@ -24,10 +28,12 @@ interface Order {
   id: string;
   customer_name: string;
   customer_phone: string;
+  customer_address: string;
   total_amount: number;
   status: string;
   created_at: string;
   items: any;
+  receipt_image?: string;
 }
 
 interface Membership {
@@ -36,6 +42,27 @@ interface Membership {
   phone: string;
   subscription_date: string;
   status: string;
+  receipt_image?: string;
+}
+
+interface Category {
+  id: string;
+  name: string;
+  description?: string;
+  created_at: string;
+}
+
+interface Book {
+  id: string;
+  title: string;
+  author: string;
+  description?: string;
+  price: number;
+  category_id?: string;
+  image_url?: string;
+  is_available: boolean;
+  created_at: string;
+  category?: { name: string };
 }
 
 const AdminDashboard = () => {
@@ -46,7 +73,23 @@ const AdminDashboard = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [memberships, setMemberships] = useState<Membership[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Form states
+  const [newCategory, setNewCategory] = useState({ name: '', description: '' });
+  const [newBook, setNewBook] = useState({
+    title: '',
+    author: '',
+    description: '',
+    price: '',
+    category_id: '',
+    image_url: '',
+    is_available: true
+  });
+  const [editingItem, setEditingItem] = useState<any>(null);
+  const [editingType, setEditingType] = useState<string>('');
 
   useEffect(() => {
     if (!profile || profile.role !== 'admin') {
@@ -88,7 +131,26 @@ const AdminDashboard = () => {
       if (membershipsError) throw membershipsError;
       setMemberships(membershipsData || []);
 
+      // Fetch categories
+      const { data: categoriesData, error: categoriesError } = await supabase
+        .from('categories')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (categoriesError) throw categoriesError;
+      setCategories(categoriesData || []);
+
+      // Fetch books with categories
+      const { data: booksData, error: booksError } = await supabase
+        .from('books')
+        .select('*, category:categories(name)')
+        .order('created_at', { ascending: false });
+
+      if (booksError) throw booksError;
+      setBooks(booksData || []);
+
     } catch (error: any) {
+      console.error('Error fetching data:', error);
       toast({
         title: "خطأ في تحميل البيانات",
         description: error.message,
@@ -146,6 +208,137 @@ const AdminDashboard = () => {
     }
   };
 
+  const updateMembershipStatus = async (membershipId: string, newStatus: string) => {
+    try {
+      const { error } = await supabase
+        .from('knowledge_club_memberships')
+        .update({ status: newStatus })
+        .eq('id', membershipId);
+
+      if (error) throw error;
+
+      setMemberships(memberships.map(membership => 
+        membership.id === membershipId ? { ...membership, status: newStatus } : membership
+      ));
+
+      toast({
+        title: "تم تحديث حالة العضوية",
+      });
+    } catch (error: any) {
+      toast({
+        title: "خطأ في تحديث العضوية",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const createCategory = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .insert([newCategory])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setCategories([data, ...categories]);
+      setNewCategory({ name: '', description: '' });
+      toast({
+        title: "تم إنشاء التصنيف بنجاح",
+      });
+    } catch (error: any) {
+      toast({
+        title: "خطأ في إنشاء التصنيف",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const createBook = async () => {
+    try {
+      const bookData = {
+        ...newBook,
+        price: parseFloat(newBook.price),
+        category_id: newBook.category_id || null
+      };
+
+      const { data, error } = await supabase
+        .from('books')
+        .insert([bookData])
+        .select('*, category:categories(name)')
+        .single();
+
+      if (error) throw error;
+
+      setBooks([data, ...books]);
+      setNewBook({
+        title: '',
+        author: '',
+        description: '',
+        price: '',
+        category_id: '',
+        image_url: '',
+        is_available: true
+      });
+      toast({
+        title: "تم إنشاء الكتاب بنجاح",
+      });
+    } catch (error: any) {
+      toast({
+        title: "خطأ في إنشاء الكتاب",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const deleteCategory = async (categoryId: string) => {
+    try {
+      const { error } = await supabase
+        .from('categories')
+        .delete()
+        .eq('id', categoryId);
+
+      if (error) throw error;
+
+      setCategories(categories.filter(cat => cat.id !== categoryId));
+      toast({
+        title: "تم حذف التصنيف بنجاح",
+      });
+    } catch (error: any) {
+      toast({
+        title: "خطأ في حذف التصنيف",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const deleteBook = async (bookId: string) => {
+    try {
+      const { error } = await supabase
+        .from('books')
+        .delete()
+        .eq('id', bookId);
+
+      if (error) throw error;
+
+      setBooks(books.filter(book => book.id !== bookId));
+      toast({
+        title: "تم حذف الكتاب بنجاح",
+      });
+    } catch (error: any) {
+      toast({
+        title: "خطأ في حذف الكتاب",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   if (!profile || profile.role !== 'admin') {
     return null;
   }
@@ -165,7 +358,7 @@ const AdminDashboard = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-center mb-2">لوحة التحكم</h1>
-          <p className="text-gray-600 text-center">إدارة النظام والمستخدمين</p>
+          <p className="text-muted-foreground text-center">إدارة النظام والمستخدمين</p>
         </div>
 
         {/* Statistics Cards */}
@@ -215,10 +408,12 @@ const AdminDashboard = () => {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="users" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="users">المستخدمين</TabsTrigger>
             <TabsTrigger value="orders">الطلبات</TabsTrigger>
             <TabsTrigger value="memberships">العضويات</TabsTrigger>
+            <TabsTrigger value="categories">التصنيفات</TabsTrigger>
+            <TabsTrigger value="books">الكتب</TabsTrigger>
           </TabsList>
 
           {/* Users Tab */}
@@ -228,31 +423,44 @@ const AdminDashboard = () => {
                 <CardTitle>إدارة المستخدمين</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {users.map((user) => (
-                    <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div>
-                        <h3 className="font-medium">{user.name}</h3>
-                        <p className="text-sm text-gray-600">{user.phone}</p>
-                        <p className="text-xs text-gray-500">
-                          تاريخ التسجيل: {new Date(user.created_at).toLocaleDateString('ar')}
-                        </p>
-                        {user.role === 'admin' && (
-                          <Badge variant="destructive" className="mt-1">مدير</Badge>
-                        )}
-                      </div>
-                      {user.role !== 'admin' && (
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => deleteUser(user.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                  ))}
-                </div>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>الاسم</TableHead>
+                      <TableHead>رقم الهاتف</TableHead>
+                      <TableHead>الدور</TableHead>
+                      <TableHead>تاريخ التسجيل</TableHead>
+                      <TableHead>الإجراءات</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {users.map((user) => (
+                      <TableRow key={user.id}>
+                        <TableCell>{user.name}</TableCell>
+                        <TableCell>{user.phone}</TableCell>
+                        <TableCell>
+                          {user.role === 'admin' ? (
+                            <Badge variant="destructive">مدير</Badge>
+                          ) : (
+                            <Badge variant="secondary">مستخدم</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell>{new Date(user.created_at).toLocaleDateString('ar')}</TableCell>
+                        <TableCell>
+                          {user.role !== 'admin' && (
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => deleteUser(user.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </CardContent>
             </Card>
           </TabsContent>
@@ -264,47 +472,77 @@ const AdminDashboard = () => {
                 <CardTitle>إدارة الطلبات</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {orders.map((order) => (
-                    <div key={order.id} className="p-4 border rounded-lg">
-                      <div className="flex items-center justify-between mb-2">
-                        <div>
-                          <h3 className="font-medium">{order.customer_name}</h3>
-                          <p className="text-sm text-gray-600">{order.customer_phone}</p>
-                        </div>
-                        <div className="text-left">
-                          <p className="font-bold">{order.total_amount} ر.س</p>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>اسم العميل</TableHead>
+                      <TableHead>رقم الهاتف</TableHead>
+                      <TableHead>العنوان</TableHead>
+                      <TableHead>المبلغ</TableHead>
+                      <TableHead>الحالة</TableHead>
+                      <TableHead>الايصال</TableHead>
+                      <TableHead>التاريخ</TableHead>
+                      <TableHead>الإجراءات</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {orders.map((order) => (
+                      <TableRow key={order.id}>
+                        <TableCell>{order.customer_name}</TableCell>
+                        <TableCell>{order.customer_phone}</TableCell>
+                        <TableCell className="max-w-[200px] truncate">{order.customer_address}</TableCell>
+                        <TableCell>{order.total_amount} ر.س</TableCell>
+                        <TableCell>
                           <Badge 
                             variant={order.status === 'completed' ? 'default' : 'secondary'}
                           >
                             {order.status === 'pending' ? 'معلق' : 'مكتمل'}
                           </Badge>
-                        </div>
-                      </div>
-                      <p className="text-xs text-gray-500 mb-2">
-                        {new Date(order.created_at).toLocaleDateString('ar')}
-                      </p>
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => updateOrderStatus(order.id, 'completed')}
-                          disabled={order.status === 'completed'}
-                        >
-                          تأكيد الطلب
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          onClick={() => updateOrderStatus(order.id, 'pending')}
-                          disabled={order.status === 'pending'}
-                        >
-                          إلغاء التأكيد
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                        </TableCell>
+                        <TableCell>
+                          {order.receipt_image ? (
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button variant="outline" size="sm">
+                                  <Image className="h-4 w-4" />
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent>
+                                <DialogHeader>
+                                  <DialogTitle>صورة الايصال</DialogTitle>
+                                </DialogHeader>
+                                <img src={order.receipt_image} alt="Receipt" className="w-full" />
+                              </DialogContent>
+                            </Dialog>
+                          ) : (
+                            <span className="text-muted-foreground">لا يوجد</span>
+                          )}
+                        </TableCell>
+                        <TableCell>{new Date(order.created_at).toLocaleDateString('ar')}</TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => updateOrderStatus(order.id, 'completed')}
+                              disabled={order.status === 'completed'}
+                            >
+                              تأكيد
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              onClick={() => updateOrderStatus(order.id, 'pending')}
+                              disabled={order.status === 'pending'}
+                            >
+                              إلغاء
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </CardContent>
             </Card>
           </TabsContent>
@@ -316,24 +554,281 @@ const AdminDashboard = () => {
                 <CardTitle>إدارة العضويات</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {memberships.map((membership) => (
-                    <div key={membership.id} className="flex items-center justify-between p-4 border rounded-lg">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>الاسم</TableHead>
+                      <TableHead>رقم الهاتف</TableHead>
+                      <TableHead>الحالة</TableHead>
+                      <TableHead>الايصال</TableHead>
+                      <TableHead>تاريخ الاشتراك</TableHead>
+                      <TableHead>الإجراءات</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {memberships.map((membership) => (
+                      <TableRow key={membership.id}>
+                        <TableCell>{membership.name}</TableCell>
+                        <TableCell>{membership.phone}</TableCell>
+                        <TableCell>
+                          <Badge 
+                            variant={membership.status === 'active' ? 'default' : 'secondary'}
+                          >
+                            {membership.status === 'active' ? 'نشط' : 'غير نشط'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {membership.receipt_image ? (
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button variant="outline" size="sm">
+                                  <Image className="h-4 w-4" />
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent>
+                                <DialogHeader>
+                                  <DialogTitle>صورة الايصال</DialogTitle>
+                                </DialogHeader>
+                                <img src={membership.receipt_image} alt="Receipt" className="w-full" />
+                              </DialogContent>
+                            </Dialog>
+                          ) : (
+                            <span className="text-muted-foreground">لا يوجد</span>
+                          )}
+                        </TableCell>
+                        <TableCell>{new Date(membership.subscription_date).toLocaleDateString('ar')}</TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => updateMembershipStatus(membership.id, 'active')}
+                              disabled={membership.status === 'active'}
+                            >
+                              تفعيل
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              onClick={() => updateMembershipStatus(membership.id, 'inactive')}
+                              disabled={membership.status === 'inactive'}
+                            >
+                              إلغاء
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Categories Tab */}
+          <TabsContent value="categories" className="space-y-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>إدارة التصنيفات</CardTitle>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button>
+                      <Plus className="h-4 w-4 mr-2" />
+                      إضافة تصنيف
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>إضافة تصنيف جديد</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
                       <div>
-                        <h3 className="font-medium">{membership.name}</h3>
-                        <p className="text-sm text-gray-600">{membership.phone}</p>
-                        <p className="text-xs text-gray-500">
-                          تاريخ الاشتراك: {new Date(membership.subscription_date).toLocaleDateString('ar')}
-                        </p>
+                        <Label htmlFor="category-name">اسم التصنيف</Label>
+                        <Input
+                          id="category-name"
+                          value={newCategory.name}
+                          onChange={(e) => setNewCategory({...newCategory, name: e.target.value})}
+                          placeholder="اسم التصنيف"
+                        />
                       </div>
-                      <Badge 
-                        variant={membership.status === 'active' ? 'default' : 'secondary'}
-                      >
-                        {membership.status === 'active' ? 'نشط' : 'غير نشط'}
-                      </Badge>
+                      <div>
+                        <Label htmlFor="category-description">الوصف</Label>
+                        <Textarea
+                          id="category-description"
+                          value={newCategory.description}
+                          onChange={(e) => setNewCategory({...newCategory, description: e.target.value})}
+                          placeholder="وصف التصنيف"
+                        />
+                      </div>
+                      <Button onClick={createCategory} className="w-full">
+                        إنشاء التصنيف
+                      </Button>
                     </div>
-                  ))}
-                </div>
+                  </DialogContent>
+                </Dialog>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>اسم التصنيف</TableHead>
+                      <TableHead>الوصف</TableHead>
+                      <TableHead>تاريخ الإنشاء</TableHead>
+                      <TableHead>الإجراءات</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {categories.map((category) => (
+                      <TableRow key={category.id}>
+                        <TableCell>{category.name}</TableCell>
+                        <TableCell>{category.description || 'لا يوجد وصف'}</TableCell>
+                        <TableCell>{new Date(category.created_at).toLocaleDateString('ar')}</TableCell>
+                        <TableCell>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => deleteCategory(category.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Books Tab */}
+          <TabsContent value="books" className="space-y-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>إدارة الكتب</CardTitle>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button>
+                      <Plus className="h-4 w-4 mr-2" />
+                      إضافة كتاب
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                      <DialogTitle>إضافة كتاب جديد</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="book-title">عنوان الكتاب</Label>
+                          <Input
+                            id="book-title"
+                            value={newBook.title}
+                            onChange={(e) => setNewBook({...newBook, title: e.target.value})}
+                            placeholder="عنوان الكتاب"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="book-author">المؤلف</Label>
+                          <Input
+                            id="book-author"
+                            value={newBook.author}
+                            onChange={(e) => setNewBook({...newBook, author: e.target.value})}
+                            placeholder="اسم المؤلف"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <Label htmlFor="book-description">الوصف</Label>
+                        <Textarea
+                          id="book-description"
+                          value={newBook.description}
+                          onChange={(e) => setNewBook({...newBook, description: e.target.value})}
+                          placeholder="وصف الكتاب"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="book-price">السعر (ر.س)</Label>
+                          <Input
+                            id="book-price"
+                            type="number"
+                            value={newBook.price}
+                            onChange={(e) => setNewBook({...newBook, price: e.target.value})}
+                            placeholder="السعر"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="book-category">التصنيف</Label>
+                          <Select
+                            value={newBook.category_id}
+                            onValueChange={(value) => setNewBook({...newBook, category_id: value})}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="اختر التصنيف" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {categories.map((category) => (
+                                <SelectItem key={category.id} value={category.id}>
+                                  {category.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <div>
+                        <Label htmlFor="book-image">رابط الصورة</Label>
+                        <Input
+                          id="book-image"
+                          value={newBook.image_url}
+                          onChange={(e) => setNewBook({...newBook, image_url: e.target.value})}
+                          placeholder="رابط صورة الكتاب"
+                        />
+                      </div>
+                      <Button onClick={createBook} className="w-full">
+                        إنشاء الكتاب
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>العنوان</TableHead>
+                      <TableHead>المؤلف</TableHead>
+                      <TableHead>التصنيف</TableHead>
+                      <TableHead>السعر</TableHead>
+                      <TableHead>متاح</TableHead>
+                      <TableHead>الإجراءات</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {books.map((book) => (
+                      <TableRow key={book.id}>
+                        <TableCell>{book.title}</TableCell>
+                        <TableCell>{book.author}</TableCell>
+                        <TableCell>{book.category?.name || 'بدون تصنيف'}</TableCell>
+                        <TableCell>{book.price} ر.س</TableCell>
+                        <TableCell>
+                          <Badge variant={book.is_available ? 'default' : 'secondary'}>
+                            {book.is_available ? 'متاح' : 'غير متاح'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => deleteBook(book.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </CardContent>
             </Card>
           </TabsContent>

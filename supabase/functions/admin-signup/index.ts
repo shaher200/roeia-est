@@ -27,13 +27,18 @@ serve(async (req) => {
     }
 
     // Basic validations similar to client-side
-    if (!/^01\d{9}$/.test(String(phone))) {
+    const phoneStr = String(phone);
+    const passwordStr = String(password);
+    
+    if (!/^01\d{9}$/.test(phoneStr)) {
+      console.log("Phone validation failed:", phoneStr);
       return new Response(
         JSON.stringify({ error: "Invalid phone format. Must start with 01 and be 11 digits" }),
         { status: 400, headers: corsHeaders }
       );
     }
-    if (!/^\d{6}$/.test(String(password))) {
+    if (!/^\d{6}$/.test(passwordStr)) {
+      console.log("Password validation failed:", passwordStr);
       return new Response(
         JSON.stringify({ error: "Password must be exactly 6 digits" }),
         { status: 400, headers: corsHeaders }
@@ -54,39 +59,47 @@ serve(async (req) => {
 
     const email = `${phone}@temp.com`;
 
+    console.log("Creating user with email:", email);
+
     // Create user with email confirmed to bypass email confirmation flow
     const { data: created, error: createError } = await admin.auth.admin.createUser({
       email,
-      password,
+      password: passwordStr,
       email_confirm: true,
-      raw_user_meta_data: {
+      user_metadata: {
         name,
-        phone,
+        phone: phoneStr,
         display_name: name,
       },
     });
 
     if (createError) {
+      console.log("User creation error:", createError);
       return new Response(
         JSON.stringify({ error: createError.message || "Failed to create user" }),
         { status: 400, headers: corsHeaders }
       );
     }
 
+    console.log("User created successfully:", created.user?.id);
+
     const userId = created.user?.id;
 
     // Store/update profile record (avoids needing an auth.users trigger)
     if (userId) {
+      console.log("Creating profile for user:", userId);
       const { error: profileError } = await admin
         .from("profiles")
         .upsert(
-          { user_id: userId, name, phone, role: "user" },
+          { user_id: userId, name, phone: phoneStr, role: "user" },
           { onConflict: "user_id" }
         );
 
       // Not fatal: just log server-side
       if (profileError) {
         console.log("Profile upsert error", profileError);
+      } else {
+        console.log("Profile created successfully");
       }
     }
 
