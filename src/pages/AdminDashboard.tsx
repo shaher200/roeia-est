@@ -66,7 +66,7 @@ interface Book {
 }
 
 const AdminDashboard = () => {
-  const { profile } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -92,26 +92,26 @@ const AdminDashboard = () => {
   const [editingType, setEditingType] = useState<string>('');
 
   useEffect(() => {
-    if (!profile || profile.role !== 'admin') {
+    if (!user || user.role !== 'admin') {
       navigate('/');
       return;
     }
     
     fetchData();
-  }, [profile, navigate]);
+  }, [user, navigate]);
 
   const fetchData = async () => {
     try {
       setLoading(true);
       
-      // Fetch users (profiles)
-      const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles')
+      // Fetch users from custom_users table
+      const { data: usersData, error: usersError } = await supabase
+        .from('custom_users')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (profilesError) throw profilesError;
-      setUsers(profilesData || []);
+      if (usersError) throw usersError;
+      setUsers(usersData || []);
 
       // Fetch orders
       const { data: ordersData, error: ordersError } = await supabase
@@ -164,7 +164,7 @@ const AdminDashboard = () => {
   const deleteUser = async (userId: string) => {
     try {
       const { error } = await supabase
-        .from('profiles')
+        .from('custom_users')
         .delete()
         .eq('id', userId);
 
@@ -339,7 +339,7 @@ const AdminDashboard = () => {
     }
   };
 
-  if (!profile || profile.role !== 'admin') {
+  if (!user || user.role !== 'admin') {
     return null;
   }
 

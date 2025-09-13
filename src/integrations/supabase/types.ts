@@ -85,6 +85,39 @@ export type Database = {
         }
         Relationships: []
       }
+      custom_users: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          password_hash: string
+          phone: string
+          role: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          password_hash: string
+          phone: string
+          role?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          password_hash?: string
+          phone?: string
+          role?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       knowledge_club_memberships: {
         Row: {
           id: string

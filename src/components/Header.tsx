@@ -7,7 +7,7 @@ import TickerBar from './TickerBar';
 
 const Header = () => {
   const { getTotalItems } = useCart();
-  const { user, profile, signOut } = useAuth();
+  const { user, signOut } = useAuth();
   const totalItems = getTotalItems();
 
   return (
@@ -31,7 +31,7 @@ const Header = () => {
             {/* User Actions */}
             <div className="flex items-center space-x-reverse space-x-4">
               {/* Admin Dashboard Button */}
-              {profile?.role === 'admin' && (
+              {user?.role === 'admin' && (
                 <Link to="/admin" className="flex items-center space-x-reverse space-x-2 text-red-600 hover:text-red-800 transition-colors">
                   <Settings className="h-6 w-6" />
                   <span className="text-sm font-medium">لوحة التحكم</span>

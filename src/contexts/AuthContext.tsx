@@ -1,13 +1,17 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
+interface CustomUser {
+  id: string;
+  phone: string;
+  name: string;
+  role: string;
+}
+
 interface AuthContextType {
-  user: User | null;
-  session: Session | null;
-  profile: any;
+  user: CustomUser | null;
+  token: string | null;
   signUp: (name: string, password: string, phone: string) => Promise<{ error: any }>;
   signIn: (phone: string, password: string) => Promise<{ error: any }>; 
   signOut: () => Promise<void>;
@@ -17,192 +21,138 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [profile, setProfile] = useState<any>(null);
+  const [user, setUser] = useState<CustomUser | null>(null);
+  const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          // Defer profile fetch to avoid auth deadlocks per Supabase best practices
-          setTimeout(async () => {
-            const { data: profileData } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('user_id', session.user!.id)
-              .maybeSingle();
-            setProfile(profileData);
-          }, 0);
-        } else {
-          setProfile(null);
-        }
-        
-        setLoading(false);
+    // التحقق من وجود مستخدم محفوظ في localStorage
+    const savedUser = localStorage.getItem('custom_user');
+    const savedToken = localStorage.getItem('custom_token');
+    
+    if (savedUser && savedToken) {
+      try {
+        const parsedUser = JSON.parse(savedUser);
+        setUser(parsedUser);
+        setToken(savedToken);
+      } catch (error) {
+        console.error('Error parsing saved user:', error);
+        localStorage.removeItem('custom_user');
+        localStorage.removeItem('custom_token');
       }
-    );
-
-    // Check for existing session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        // Fetch user profile
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('user_id', session.user.id)
-          .maybeSingle();
-        setProfile(profileData);
-      } else {
-        setProfile(null);
-      }
-      
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-const signUp = async (name: string, password: string, phone: string) => {
-  try {
-    // Call edge function to create a confirmed user and store profile
-    const { data, error: fnError } = await supabase.functions.invoke('admin-signup', {
-      body: { name, phone, password },
-    });
-
-    if (fnError || !(data as any)?.ok) {
-      const message = (data as any)?.error || fnError?.message || "حدث خطأ أثناء التسجيل، تأكد من البيانات";
-      toast({
-        title: "خطأ في التسجيل",
-        description: message,
-        variant: "destructive",
-      });
-      return { error: fnError || new Error(message) };
-    }
-
-    // Auto sign-in after successful creation
-    const tempEmail = `${phone}@temp.com`;
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email: tempEmail,
-      password,
-    });
-
-    if (signInError) {
-      toast({
-        title: "خطأ في تسجيل الدخول",
-        description: signInError.message || "تعذر تسجيل الدخول بعد إنشاء الحساب",
-        variant: "destructive",
-      });
-      return { error: signInError };
-    }
-
-    toast({
-      title: "تم إنشاء الحساب بنجاح",
-      description: "تم تسجيل الدخول تلقائياً، مرحباً بك",
-    });
-
-    return { error: null };
-  } catch (error: any) {
-    toast({
-      title: "خطأ في التسجيل",
-      description: "حدث خطأ غير متوقع",
-      variant: "destructive",
-    });
-    return { error };
-  }
-};
-
-const signIn = async (phone: string, password: string) => {
-  try {
-    // Check for admin credentials
-    if (phone === '01044444444' && password === '123456') {
-      // Create a mock admin session
-      const adminUser = {
-        id: '00000000-0000-0000-0000-000000000000',
-        phone: '01044444444',
-        name: 'مدير النظام',
-        role: 'admin'
-      };
-      
-      setUser(adminUser as any);
-      setProfile(adminUser);
-      
-      toast({
-        title: "تم تسجيل الدخول كمدير",
-        description: "مرحباً بك في لوحة التحكم",
-      });
-      
-      return { error: null };
     }
     
-    const tempEmail = `${phone}@temp.com`;
-    const { error } = await supabase.auth.signInWithPassword({
-      email: tempEmail,
-      password,
-    });
+    setLoading(false);
+  }, []);
 
-    if (error) {
+  const signUp = async (name: string, password: string, phone: string) => {
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke('custom-auth', {
+        body: { action: 'signup', name, phone, password },
+      });
+
+      if (fnError || !data?.success) {
+        const errorMessage = data?.error || fnError?.message || "حدث خطأ أثناء التسجيل";
+        toast({
+          title: "خطأ في التسجيل",
+          description: errorMessage,
+          variant: "destructive",
+        });
+        return { error: new Error(errorMessage) };
+      }
+
+      // حفظ بيانات المستخدم
+      const userData = data.user;
+      const userToken = data.token;
+      
+      setUser(userData);
+      setToken(userToken);
+      
+      localStorage.setItem('custom_user', JSON.stringify(userData));
+      localStorage.setItem('custom_token', userToken);
+
       toast({
-        title: "خطأ في تسجيل الدخول",
-        description: error.message || "رقم الهاتف أو كلمة المرور غير صحيحة",
+        title: "تم إنشاء الحساب بنجاح",
+        description: "مرحباً بك، تم تسجيل الدخول تلقائياً",
+      });
+
+      return { error: null };
+    } catch (error: any) {
+      toast({
+        title: "خطأ في التسجيل",
+        description: "حدث خطأ غير متوقع",
         variant: "destructive",
       });
       return { error };
     }
+  };
 
-    toast({
-      title: "تم تسجيل الدخول بنجاح",
-      description: "مرحباً بك",
-    });
+  const signIn = async (phone: string, password: string) => {
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke('custom-auth', {
+        body: { action: 'signin', phone, password },
+      });
 
-    return { error: null };
-  } catch (error: any) {
-    toast({
-      title: "خطأ في تسجيل الدخول",
-      description: "حدث خطأ غير متوقع",
-      variant: "destructive",
-    });
-    return { error };
-  }
-};
+      if (fnError || !data?.success) {
+        const errorMessage = data?.error || fnError?.message || "رقم الهاتف أو كلمة المرور غير صحيحة";
+        toast({
+          title: "خطأ في تسجيل الدخول",
+          description: errorMessage,
+          variant: "destructive",
+        });
+        return { error: new Error(errorMessage) };
+      }
 
-const signOut = async () => {
-  // Check if admin
-  if (profile?.role === 'admin') {
+      // حفظ بيانات المستخدم
+      const userData = data.user;
+      const userToken = data.token;
+      
+      setUser(userData);
+      setToken(userToken);
+      
+      localStorage.setItem('custom_user', JSON.stringify(userData));
+      localStorage.setItem('custom_token', userToken);
+
+      toast({
+        title: "تم تسجيل الدخول بنجاح",
+        description: `مرحباً بك ${userData.name}`,
+      });
+
+      return { error: null };
+    } catch (error: any) {
+      toast({
+        title: "خطأ في تسجيل الدخول",
+        description: "حدث خطأ غير متوقع",
+        variant: "destructive",
+      });
+      return { error };
+    }
+  };
+
+  const signOut = async () => {
     setUser(null);
-    setProfile(null);
-    setSession(null);
-  } else {
-    await supabase.auth.signOut();
-  }
-  
-  toast({
-    title: "تم تسجيل الخروج بنجاح",
-  });
-};
+    setToken(null);
+    localStorage.removeItem('custom_user');
+    localStorage.removeItem('custom_token');
+    
+    toast({
+      title: "تم تسجيل الخروج بنجاح",
+    });
+  };
 
-
-return (
-  <AuthContext.Provider value={{
-    user,
-    session,
-    profile,
-    signUp,
-    signIn,
-    signOut,
-    loading
-  }}>
-    {children}
-  </AuthContext.Provider>
-);
+  return (
+    <AuthContext.Provider value={{
+      user,
+      token,
+      signUp,
+      signIn,
+      signOut,
+      loading
+    }}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
 export const useAuth = () => {
