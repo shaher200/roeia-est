@@ -26,18 +26,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Fetch user profile
-          const { data: profileData } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('user_id', session.user.id)
-            .maybeSingle();
-          setProfile(profileData);
+          // Defer profile fetch to avoid auth deadlocks per Supabase best practices
+          setTimeout(async () => {
+            const { data: profileData } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('user_id', session.user!.id)
+              .maybeSingle();
+            setProfile(profileData);
+          }, 0);
         } else {
           setProfile(null);
         }
@@ -72,17 +74,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 const signUp = async (name: string, password: string, phone: string) => {
   try {
     // Call edge function to create a confirmed user and store profile
-    const { error: fnError } = await supabase.functions.invoke('admin-signup', {
+    const { data, error: fnError } = await supabase.functions.invoke('admin-signup', {
       body: { name, phone, password },
     });
 
-    if (fnError) {
+    if (fnError || !(data as any)?.ok) {
+      const message = (data as any)?.error || fnError?.message || "حدث خطأ أثناء التسجيل، تأكد من البيانات";
       toast({
         title: "خطأ في التسجيل",
-        description: fnError.message || "حدث خطأ أثناء التسجيل، تأكد من البيانات",
+        description: message,
         variant: "destructive",
       });
-      return { error: fnError };
+      return { error: fnError || new Error(message) };
     }
 
     // Auto sign-in after successful creation
