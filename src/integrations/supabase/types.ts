@@ -93,7 +93,7 @@ export type Database = {
           receipt_image: string | null
           status: string
           subscription_date: string
-          user_id: string | null
+          user_auth_id: string | null
         }
         Insert: {
           id?: string
@@ -102,7 +102,7 @@ export type Database = {
           receipt_image?: string | null
           status?: string
           subscription_date?: string
-          user_id?: string | null
+          user_auth_id?: string | null
         }
         Update: {
           id?: string
@@ -111,9 +111,17 @@ export type Database = {
           receipt_image?: string | null
           status?: string
           subscription_date?: string
-          user_id?: string | null
+          user_auth_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_club_memberships_user_auth_id_fkey"
+            columns: ["user_auth_id"]
+            isOneToOne: false
+            referencedRelation: "user_auth"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       orders: {
         Row: {
@@ -126,7 +134,7 @@ export type Database = {
           receipt_image: string | null
           status: string
           total_amount: number
-          user_id: string | null
+          user_auth_id: string | null
         }
         Insert: {
           created_at?: string
@@ -138,7 +146,7 @@ export type Database = {
           receipt_image?: string | null
           status?: string
           total_amount: number
-          user_id?: string | null
+          user_auth_id?: string | null
         }
         Update: {
           created_at?: string
@@ -150,9 +158,17 @@ export type Database = {
           receipt_image?: string | null
           status?: string
           total_amount?: number
-          user_id?: string | null
+          user_auth_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "orders_user_auth_id_fkey"
+            columns: ["user_auth_id"]
+            isOneToOne: false
+            referencedRelation: "user_auth"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -162,7 +178,7 @@ export type Database = {
           phone: string
           role: string | null
           updated_at: string
-          user_id: string | null
+          user_auth_id: string | null
         }
         Insert: {
           created_at?: string
@@ -171,7 +187,7 @@ export type Database = {
           phone: string
           role?: string | null
           updated_at?: string
-          user_id?: string | null
+          user_auth_id?: string | null
         }
         Update: {
           created_at?: string
@@ -180,7 +196,48 @@ export type Database = {
           phone?: string
           role?: string | null
           updated_at?: string
-          user_id?: string | null
+          user_auth_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_user_auth_id_fkey"
+            columns: ["user_auth_id"]
+            isOneToOne: false
+            referencedRelation: "user_auth"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_auth: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          password_hash: string
+          phone: string
+          role: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          password_hash: string
+          phone: string
+          role?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          password_hash?: string
+          phone?: string
+          role?: string
+          updated_at?: string
         }
         Relationships: []
       }
